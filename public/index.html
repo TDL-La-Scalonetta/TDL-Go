@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Subastas</title>
+  <script src="https://unpkg.com/vue"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+</head>
+<body>
+  <div id="app">
+    <h2>Subastas!</h2>
+    <div class="user-container">
+      <div v-if="authenticated">Ingresaste como: <b>{{ user.name }}</b></div>
+      <div v-else>
+        <input v-model="user.name" placeholder="Ingrese su nombre">
+        <button @click="setUser()" class="login">Login</button>
+      </div>
+    </div>
+    <div class="room-container">
+      <div v-for="room in rooms" class="room">
+        <div class="room-header">
+          <div class="title"><b>{{ room.Product}}</b></h4></div>
+          <div class="subtitle">{{ room.Name }}</div>
+        </div>
+        <div class="room-body">
+          <p>Precio: {{ room.BaseValue}}</p>
+          <p>Participantes: {{ room.Participants}}</p>
+          <div v-if="authenticated"><a class="connect" @click="joinRoom(room)">Ingresar</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <style>
+    html, body {
+      font-family: ubuntu, monospace;
+    }
+    input {
+      border: solid 1px #f1f1f1;
+      border-radius: 5px;
+      padding:  5px;
+    }
+    .room-header {
+      text-align: center;
+      border-bottom: solid 1px #f1f1f1;
+      padding-bottom: 5px;
+    }
+    .room-body {
+      padding:  10px;
+    }
+    .title {
+      color:  darkred;
+      font-size:  18px;
+      padding: 5px;
+      background: pink;
+    }
+    .subtitle {
+      font-size:  12px;
+      padding:  5px 0px;
+    }
+    .login {
+      background: orangered;
+      color:  white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      margin:  0px 10px;
+      border: none;
+    }
+    .user-container {
+      border-bottom:  solid 1px #999;
+      margin:  10px 0px;
+      padding:  10px 0px;
+    }
+    .room-container {
+      margin: 10px 0px;
+      display:  flex;
+      flex-direction: row;
+      justify-content: flex-start;
+    }
+    .room {
+      border: solid 1px #f1f1f1;
+      padding:  0px;
+      margin-right: 10px;
+      min-width: 300px;
+    }
+    .connect {
+      cursor: pointer;
+      background: yellowgreen;
+      color:  white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      margin:  10px 0px;
+      border: none;
+    }
+  </style>
+</body>
+<script src="app.js"></script>
+
+</html>
