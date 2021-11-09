@@ -15,9 +15,19 @@ const (
 func main() {
 	listener, err := net.Listen(connType, connHost+":"+connPort)
 	if err != nil {
-		fmt.Println("Error listening:", err.Error())
+		fmt.Println("Error escuchando:", err.Error())
 		os.Exit(1)
 	}
 	defer listener.Close() //Siempre se cerrara el Listener.
+
+	for {
+		client, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error conectando:", err.Error())
+			return
+		}
+
+		fmt.Println("Client " + client.RemoteAddr().String() + " connected.")
+	}
 
 }
