@@ -11,7 +11,18 @@
   <div id="app">
     <h2>Subastas!</h2>
     <div class="user-container">
-      <div v-if="authenticated">Ingresaste como: <b>{{ user.name }}</b></div>
+      <div v-if="authenticated" class="loggedin">
+        <div>
+          Ingresaste como: <b>{{ user.name }}</b>
+          <button @click="fetchRooms()" class="login">Ver Rooms</button>
+        </div>
+        <div style="display: inline">
+          <input type="text" v-model="newRoom.name">
+          <input type="text" v-model="newRoom.product">
+          <input type="text" v-model="newRoom.value">
+          <button @click="createRoom()" class="login">Crear Room</button>
+        </div>
+      </div>
       <div v-else>
         <input v-model="user.name" placeholder="Ingrese su nombre">
         <button @click="setUser()" class="login">Login</button>
@@ -70,6 +81,10 @@
       border-bottom:  solid 1px #999;
       margin:  10px 0px;
       padding:  10px 0px;
+    }
+    .loggedin {
+      display: flex;
+      justify-content: space-between;
     }
     .room-container {
       margin: 10px 0px;

@@ -1,6 +1,11 @@
+
+
+
+
 package main
 
 type Room struct {
+	Owner         User
 	Name 					string
 	Product 			string
 	BaseValue 		float32
@@ -10,11 +15,12 @@ type Room struct {
 	unregister 		chan *User
 }
 
-func newRoom(name string, product string, value float32) *Room {
+func newRoom(Owner User, Name string, Product string, BaseValue float32) *Room {
 	return &Room {
-		Name: 			name,
-		Product: 		product,
-		BaseValue: 	value,
+		Owner:      Owner,
+		Name: 			Name,
+		Product: 		Product,
+		BaseValue: 	BaseValue,
 		users:      make(map[*User]bool),
 		register:   make(chan *User),
     unregister: make(chan *User),

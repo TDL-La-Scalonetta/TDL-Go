@@ -6,14 +6,16 @@ let app = new Vue({
       ws: null,
       serverUrl: "ws://localhost:8080/ws",
       roomInput: null,
+      newRoom: {
+        name: '',
+        product: '',
+        value: ''
+      },
       rooms: [],
       activeRooms: [],
       user: { name: null },
       authenticated: false
     }
-  },
-  created() {
-    this.fetchRooms()
   },
   methods: {
     setUser() {
@@ -23,6 +25,16 @@ let app = new Vue({
     fetchRooms() {
       this.$http.get("/rooms").then(res => {
         this.rooms = res.data
+      })
+    },
+    createRoom() {
+      this.$http.post("/rooms/new", {
+        "Owner": this.user.name,
+        "Name": this.newRoom.name,
+        "Product": this.newRoom.product,
+        "Value": this.newRoom.value
+      }).then(res => {
+        console.log('Success')
       })
     },
     connect() {
