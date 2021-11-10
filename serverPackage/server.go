@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-type client struct {
+type Client struct {
 	nombre string
 	socket net.Conn
 }
@@ -31,33 +31,36 @@ func main() {
 	defer listener.Close() //Siempre se cerrara el Listener.
 
 	for {
-		newClient, err := listener.Accept()
+		newClientSocket, err := listener.Accept()
 		if err != nil {
 			fmt.Println("Error conectando:", err.Error())
 			return
 		}
 
-		clientLog(newClient, clients)
+		clientLog(newClientSocket, clients)
+
+		newClient := clients.Back().Value.(Client)
 
 		go recibirMensajesDeClientes(newClient) // En esta parte manejamos los mensajes entre servidor y cliente.
 	}
 
 }
 
-func recibirMensajesDeClientes(client net.Conn) {
+func recibirMensajesDeClientes(client Client) {
 
 	for { // Constantemente estaremos escuchando mensajes de los clientes.
 
-		buffer, err := bufio.NewReader(client).ReadBytes('\n') // Leo el mensaje del cliente, funcion bloqueante.
+		buffer, err := bufio.NewReader(client.socket).ReadBytes('\n') // Leo el mensaje del cliente, funcion bloqueante.
 
 		// Cierro las conexiones cuando el cliente se va.
 		if err != nil {
 			fmt.Println("Se fue el cliente.")
-			client.Close()
+			client.socket.Close()
 			return
 		}
 
-		fmt.Println("Mensaje del Cliente:", string(buffer[:len(buffer)-1]))
+		fmt.Println("Mensaje de", client.nombre)
+		fmt.Println("", string(buffer[:len(buffer)-1]))
 	}
 
 }
@@ -72,7 +75,7 @@ func clientLog(clientSocket net.Conn, clients *list.List) {
 		return
 	}
 
-	newClient := client{
+	newClient := Client{
 		nombre: string(buffer[:len(buffer)-1]),
 		socket: clientSocket,
 	}
