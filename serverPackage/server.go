@@ -38,8 +38,6 @@ func main() {
 
 		clientLog(newClient, clients)
 
-		fmt.Println("El nombre del ultimo cliente conectado es ", clients.Front().Value.(client).nombre)
-
 		go handleConnection(newClient) // En esta parte manejamos los mensajes entre servidor y cliente.
 	}
 
