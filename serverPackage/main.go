@@ -46,8 +46,13 @@ func handleConnection(client net.Conn) {
 	fmt.Println("Mensaje del Cliente:", string(buffer[:len(buffer)-1]))
 
 	// Le respondemos al cliente.
-	respuesta := []byte("Gracias por hablarle al server")
-	client.Write(respuesta)
+
+	reader := bufio.NewReader(os.Stdin) // Usamos la variable reader para leer del teclado.
+
+	fmt.Print("Mensaje a mandarle al cliente: ")
+	input, _ := reader.ReadString('\n')
+
+	client.Write([]byte(input)) // Aca le respondemos al cliente.
 
 	// Repetimos el proceso hasta que el cliente se vaya.
 	handleConnection(client)

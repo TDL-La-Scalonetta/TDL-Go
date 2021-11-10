@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -18,6 +19,24 @@ func main() {
 	if err != nil {
 		fmt.Println("Error conectando:", err.Error())
 		os.Exit(1)
+	}
+
+	// Creamos un reador para poder leer de input del teclado.
+	reader := bufio.NewReader(os.Stdin)
+
+	// Por ahora, un loop infinito de mensajes entre server y clientes.
+	for {
+
+		fmt.Print("Mensaje a mandarle al server: ")
+		input, _ := reader.ReadString('\n')
+
+		// Le mando el mensaje al Servidor.
+		server.Write([]byte(input))
+
+		// Escuchamos la respuesta del servidor.
+		message, _ := bufio.NewReader(server).ReadString('\n')
+
+		fmt.Print("Respuesta del server: " + message)
 	}
 
 }
