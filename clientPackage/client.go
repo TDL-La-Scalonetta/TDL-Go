@@ -24,11 +24,7 @@ func main() {
 	// Creamos un reador para poder leer de input del teclado.
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Print("Por favor ingrese su nombre de usuario: ")
-	input, _ := reader.ReadString('\n')
-
-	// Le mando el mensaje al Servidor.
-	server.Write([]byte(input))
+	clientLog(reader, server)
 
 	// Por ahora, un loop infinito de mensajes entre server y clientes.
 	for {
@@ -45,4 +41,12 @@ func main() {
 		fmt.Print("Respuesta del server: " + message)
 	}
 
+}
+
+func clientLog(reader *bufio.Reader, server net.Conn) {
+	fmt.Print("Por favor ingrese su nombre de usuario: ")
+	input, _ := reader.ReadString('\n')
+
+	// Le mando el mensaje al Servidor.
+	server.Write([]byte(input))
 }
