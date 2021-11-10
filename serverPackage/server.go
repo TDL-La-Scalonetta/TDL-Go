@@ -10,6 +10,7 @@ import (
 
 type client struct {
 	nombre string
+	socket net.Conn
 }
 
 const (
@@ -38,34 +39,27 @@ func main() {
 
 		clientLog(newClient, clients)
 
-		go handleConnection(newClient) // En esta parte manejamos los mensajes entre servidor y cliente.
+		go recibirMensajesDeClientes(newClient) // En esta parte manejamos los mensajes entre servidor y cliente.
 	}
 
 }
 
-func handleConnection(client net.Conn) {
-	buffer, err := bufio.NewReader(client).ReadBytes('\n') // Leo el mensaje del cliente, funcion bloqueante.
+func recibirMensajesDeClientes(client net.Conn) {
 
-	// Cierro las conexiones cuando el cliente se va.
-	if err != nil {
-		fmt.Println("Se fue el cliente.")
-		client.Close()
-		return
+	for { // Constantemente estaremos escuchando mensajes de los clientes.
+
+		buffer, err := bufio.NewReader(client).ReadBytes('\n') // Leo el mensaje del cliente, funcion bloqueante.
+
+		// Cierro las conexiones cuando el cliente se va.
+		if err != nil {
+			fmt.Println("Se fue el cliente.")
+			client.Close()
+			return
+		}
+
+		fmt.Println("Mensaje del Cliente:", string(buffer[:len(buffer)-1]))
 	}
 
-	fmt.Println("Mensaje del Cliente:", string(buffer[:len(buffer)-1]))
-
-	// Le respondemos al cliente.
-
-	reader := bufio.NewReader(os.Stdin) // Usamos la variable reader para leer del teclado.
-
-	fmt.Print("Mensaje a mandarle al cliente: ")
-	input, _ := reader.ReadString('\n')
-
-	client.Write([]byte(input)) // Aca le respondemos al cliente.
-
-	// Repetimos el proceso hasta que el cliente se vaya.
-	handleConnection(client)
 }
 
 func clientLog(clientSocket net.Conn, clients *list.List) {
@@ -80,6 +74,7 @@ func clientLog(clientSocket net.Conn, clients *list.List) {
 
 	newClient := client{
 		nombre: string(buffer[:len(buffer)-1]),
+		socket: clientSocket,
 	}
 
 	clients.PushBack(newClient)
