@@ -26,6 +26,8 @@ func main() {
 
 	clientLog(reader, server)
 
+	eleccionDeProducto(reader, server)
+
 	go recibirMensajesDelServer(server)
 
 	// Por ahora, un loop infinito de mensajes entre server y clientes.
@@ -42,6 +44,7 @@ func main() {
 }
 
 func clientLog(reader *bufio.Reader, server net.Conn) {
+	fmt.Print("\n\nBienvenido a Scalonetta, el mejor sitio para las subastas! \n\n")
 	fmt.Print("Por favor ingrese su nombre de usuario: ")
 	input, _ := reader.ReadString('\n')
 
@@ -57,4 +60,23 @@ func recibirMensajesDelServer(server net.Conn) {
 
 		fmt.Print("\n\nEscriba su mensaje: ")
 	}
+}
+
+func eleccionDeProducto(reader *bufio.Reader, server net.Conn) {
+
+	fmt.Print("\nPor favor elija el producto que desea obtener: \n")
+
+	fmt.Print("\nA) Bicicleta.\n")
+	fmt.Print("\nB) Auto.\n")
+	fmt.Print("\nC) Avión.\n\n")
+
+	fmt.Print("Escriba su opcion (A, B o C): ")
+	input, _ := reader.ReadString('\n')
+
+	// Le mando el mensaje al Servidor.
+	server.Write([]byte(input))
+
+	fmt.Print("\nUsted ha elegido la opcion ", input)
+	fmt.Print("\nPor favor espere a que ingrese una persona mas para poder comenzar con la subasta.\n\n")
+
 }
