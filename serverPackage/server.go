@@ -28,6 +28,17 @@ func main() {
 			return
 		}
 
+		buffer, err := bufio.NewReader(client).ReadBytes('\n') // Leo el mensaje del cliente, funcion bloqueante.
+
+		// Cierro las conexiones cuando el cliente se va.
+		if err != nil {
+			fmt.Println("Se fue el cliente.")
+			client.Close()
+			return
+		}
+
+		fmt.Println("El nombre del cliente que recien se conecta es:", string(buffer[:len(buffer)-1]))
+
 		go handleConnection(client) // En esta parte manejamos los mensajes entre servidor y cliente.
 	}
 
