@@ -31,7 +31,7 @@ func main() {
 	// Por ahora, un loop infinito de mensajes entre server y clientes.
 	for {
 
-		fmt.Print("Mensaje a mandarle al server: ")
+		fmt.Print("Escriba su mensaje: ")
 		input, _ := reader.ReadString('\n')
 
 		// Le mando el mensaje al Servidor.
@@ -51,8 +51,10 @@ func clientLog(reader *bufio.Reader, server net.Conn) {
 
 func recibirMensajesDelServer(server net.Conn) {
 	for { //Todo el tiempo vamos a tener que estar escuchando por nuevos mensajes del servidor.
-		message, _ := bufio.NewReader(server).ReadString('\n')
+		message, _ := bufio.NewReader(server).ReadString('.')
 
-		fmt.Print("Respuesta del server: " + message)
+		fmt.Print("\n\n" + message)
+
+		fmt.Print("\n\nEscriba su mensaje: ")
 	}
 }

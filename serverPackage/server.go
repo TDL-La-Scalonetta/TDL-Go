@@ -41,12 +41,12 @@ func main() {
 
 		newClient := clients.Back().Value.(Client)
 
-		go recibirMensajesDeClientes(newClient) // En esta parte manejamos los mensajes entre servidor y cliente.
+		go reenviarMensajesDeClientes(newClient, clients)
 	}
 
 }
 
-func recibirMensajesDeClientes(client Client) {
+func reenviarMensajesDeClientes(client Client, clients *list.List) {
 
 	for { // Constantemente estaremos escuchando mensajes de los clientes.
 
@@ -59,9 +59,13 @@ func recibirMensajesDeClientes(client Client) {
 			return
 		}
 
-		mensaje := client.nombre + string(buffer)
+		mensaje := client.nombre + string(buffer) + "." // Esto del punto lo usamos para señalar donde termina el mensaje. Es temporal.
 
 		fmt.Println(mensaje)
+
+		for c := clients.Front(); c != nil; c = c.Next() {
+			c.Value.(Client).socket.Write([]byte(mensaje))
+		}
 	}
 
 }
