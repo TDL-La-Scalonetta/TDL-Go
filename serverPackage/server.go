@@ -59,8 +59,9 @@ func recibirMensajesDeClientes(client Client) {
 			return
 		}
 
-		fmt.Println("Mensaje de", client.nombre)
-		fmt.Println("", string(buffer[:len(buffer)-1]))
+		mensaje := client.nombre + string(buffer)
+
+		fmt.Println(mensaje)
 	}
 
 }
@@ -76,7 +77,7 @@ func clientLog(clientSocket net.Conn, clients *list.List) {
 	}
 
 	newClient := Client{
-		nombre: string(buffer[:len(buffer)-1]),
+		nombre: string(buffer),
 		socket: clientSocket,
 	}
 
