@@ -1,12 +1,8 @@
 # Trabajo Práctico de Teoría del Lenguaje
 
-### Para la compilación del programa principal, utilizamos el siguiente comando (Antes ubicándonos en el directorio correspondiente):
+### Para compilar y correr el servidor, utilizamos el siguiente comando (Antes ubicándonos en el directorio del serverPackage):
 ```
-go build -o Ejecutables/main 
-```
-
-### Por su parte, para correr el mismo, utilizamos este otro comando, el cual ejecuta todo el paquete main: 
+go run main.go
 ```
 
-go run . 
-```
+### Por su parte, utilizaremos el mismo comando para correr el programa cliente en otra terminal (En este caso ubicándonos en el directorio clientPackage). 
