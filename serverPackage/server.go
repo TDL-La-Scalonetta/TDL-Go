@@ -42,7 +42,7 @@ func main() {
 
 		newClient := clients.Back().Value.(Client)
 
-		eleccionDeProducto(&newClient)
+		eleccionDeProducto(clients)
 
 		go reenviarMensajesDeClientes(newClient, clients)
 	}
@@ -91,15 +91,19 @@ func clientLog(clientSocket net.Conn, clients *list.List) {
 	clients.PushBack(newClient)
 }
 
-func eleccionDeProducto(newClient *Client) {
-	buffer, err := bufio.NewReader(newClient.socket).ReadBytes('\n')
+func eleccionDeProducto(clients *list.List) {
+	buffer, err := bufio.NewReader(clients.Back().Value.(Client).socket).ReadBytes('\n')
 
 	if err != nil {
 		fmt.Println("Se fue el cliente.")
-		newClient.socket.Close()
+		clients.Back().Value.(Client).socket.Close()
 		return
 	}
 
-	newClient.productoElegido = string(buffer)
+	auxClient := clients.Back().Value.(Client)
+
+	auxClient.productoElegido = string(buffer)
+
+	clients.Back().Value = auxClient
 
 }
