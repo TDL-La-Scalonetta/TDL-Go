@@ -40,9 +40,11 @@ func main() {
 
 		clientLog(newClientSocket, clients)
 
+		eleccionDeProducto(clients)
+
 		newClient := clients.Back().Value.(Client)
 
-		eleccionDeProducto(clients)
+		comenzarSalaDeSubastas(clients, newClient)
 
 		go reenviarMensajesDeClientes(newClient, clients)
 	}
@@ -105,5 +107,19 @@ func eleccionDeProducto(clients *list.List) {
 	auxClient.productoElegido = string(buffer)
 
 	clients.Back().Value = auxClient
+
+}
+
+func comenzarSalaDeSubastas(clients *list.List, newClient Client) {
+
+	for c := clients.Front(); c != nil; c = c.Next() {
+
+		// Cuando dos clientes como minimo desean el mismo producto, se comienza con la sala de subastas.
+
+		if (c.Value.(Client).productoElegido == newClient.productoElegido) && (c.Value.(Client).nombre != newClient.nombre) {
+			c.Value.(Client).socket.Write([]byte("La sala de Subastas ha comenzado."))
+			newClient.socket.Write([]byte("La sala de Subastas ha comenzado."))
+		}
+	}
 
 }
