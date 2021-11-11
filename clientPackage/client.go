@@ -28,18 +28,7 @@ func main() {
 
 	eleccionDeProducto(reader, server)
 
-	go recibirMensajesDelServer(server)
-
-	// Por ahora, un loop infinito de mensajes entre server y clientes.
-	for {
-
-		fmt.Print("Escriba su mensaje: ")
-		input, _ := reader.ReadString('\n')
-
-		// Le mando el mensaje al Servidor.
-		server.Write([]byte(input))
-
-	}
+	go actualizarSubasta(server)
 
 }
 
@@ -52,13 +41,12 @@ func clientLog(reader *bufio.Reader, server net.Conn) {
 	server.Write([]byte(input))
 }
 
-func recibirMensajesDelServer(server net.Conn) {
+func actualizarSubasta(server net.Conn) {
 	for { //Todo el tiempo vamos a tener que estar escuchando por nuevos mensajes del servidor.
 		message, _ := bufio.NewReader(server).ReadString('.')
 
 		fmt.Print("\n\n" + message)
 
-		fmt.Print("\n\nEscriba su mensaje: ")
 	}
 }
 
@@ -78,5 +66,11 @@ func eleccionDeProducto(reader *bufio.Reader, server net.Conn) {
 
 	fmt.Print("\nUsted ha elegido la opcion ", input)
 	fmt.Print("\nPor favor espere a que ingrese una persona mas para poder comenzar con la subasta.\n\n")
+
+	// Esperamos a que llegue un cliente mas que desea el mismo producto.
+
+	message, _ := bufio.NewReader(server).ReadString('.')
+
+	fmt.Print("\n\n" + message)
 
 }
