@@ -9,8 +9,9 @@ import (
 )
 
 type Client struct {
-	nombre string
-	socket net.Conn
+	nombre          string
+	socket          net.Conn
+	productoElegido string
 }
 
 const (
@@ -40,6 +41,8 @@ func main() {
 		clientLog(newClientSocket, clients)
 
 		newClient := clients.Back().Value.(Client)
+
+		eleccionDeProducto(&newClient)
 
 		go reenviarMensajesDeClientes(newClient, clients)
 	}
@@ -86,4 +89,17 @@ func clientLog(clientSocket net.Conn, clients *list.List) {
 	}
 
 	clients.PushBack(newClient)
+}
+
+func eleccionDeProducto(newClient *Client) {
+	buffer, err := bufio.NewReader(newClient.socket).ReadBytes('\n')
+
+	if err != nil {
+		fmt.Println("Se fue el cliente.")
+		newClient.socket.Close()
+		return
+	}
+
+	newClient.productoElegido = string(buffer)
+
 }
