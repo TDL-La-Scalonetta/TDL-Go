@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 const (
@@ -61,8 +62,15 @@ func enviarAccionDeCliente(reader *bufio.Reader, server net.Conn) {
 
 		input, _ := reader.ReadString('\n')
 
-		// Le mando el mensaje al Servidor.
-		server.Write([]byte(input))
+		if strings.Contains(input, "A") {
+			fmt.Print("\n\nPor favor ingrese el monto a ofertar: ")
+			input, _ = reader.ReadString('\n')
+			server.Write([]byte(input)) // Le paso el monto de la oferta.
+		} else {
+			fmt.Print("\n\nGracias por participar de la subasta! \n\n")
+			server.Write([]byte("Abandona subasta.")) // Le aviso que el cliente se retira de la subasta.
+			return
+		}
 	}
 }
 
