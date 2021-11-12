@@ -9,29 +9,28 @@ import (
 )
 
 const (
-	connHost = "localhost" // Por ahora en entorno local.
+	connHost = "localhost" // Por ahora, el programa va a funcionar en un entorno local.
 	connPort = "8080"      // Puerto al que se van a conectar los clientes.
-	connType = "tcp"
+	connType = "tcp"       // Protocolo de comunicacion.
 )
 
 func main() {
 
-	server, err := net.Dial(connType, connHost+":"+connPort)
+	server, err := net.Dial(connType, connHost+":"+connPort) // Me conecto al servidor.
 	if err != nil {
 		fmt.Println("Error conectando:", err.Error())
 		os.Exit(1)
 	}
 
-	// Creamos un reador para poder leer de input del teclado.
-	reader := bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(os.Stdin) // Creamos un reador para poder leer el input del teclado.
 
-	clientLog(reader, server)
+	clientLog(reader, server) // El usuario ingresa sus datos.
 
 	eleccionDeProducto(reader, server)
 
-	go actualizarSubasta(server)
+	go actualizarSubasta(server) // Goroutine utilizada para actualizar los datos de la subasta provistos por el servidor.
 
-	enviarAccionDeCliente(reader, server)
+	ejecutarAccionDeSubasta(reader, server) // Ofertar o retirarse.
 
 }
 
@@ -40,12 +39,11 @@ func clientLog(reader *bufio.Reader, server net.Conn) {
 	fmt.Print("Por favor ingrese su nombre de usuario: ")
 	input, _ := reader.ReadString('\n')
 
-	// Le mando el mensaje al Servidor.
-	server.Write([]byte(input))
+	server.Write([]byte(input)) // Le mando el mensaje al Servidor.
 }
 
 func actualizarSubasta(server net.Conn) {
-	for { //Todo el tiempo vamos a tener que estar escuchando por nuevos mensajes del servidor.
+	for { //Constantemente estamos escuchando por nuevas actualizaciones de la subasta.
 		message, _ := bufio.NewReader(server).ReadString('.')
 
 		fmt.Print("\n\n" + message)
@@ -53,7 +51,7 @@ func actualizarSubasta(server net.Conn) {
 	}
 }
 
-func enviarAccionDeCliente(reader *bufio.Reader, server net.Conn) {
+func ejecutarAccionDeSubasta(reader *bufio.Reader, server net.Conn) {
 
 	for {
 		fmt.Print("\n\nElija que desea hacer con el producto: \n\n")
@@ -62,7 +60,7 @@ func enviarAccionDeCliente(reader *bufio.Reader, server net.Conn) {
 
 		input, _ := reader.ReadString('\n')
 
-		if strings.Contains(input, "A") {
+		if strings.Contains(input, "A") { // Si se elige la opcion de ofertar.
 			fmt.Print("\n\nPor favor ingrese el monto a ofertar: ")
 			input, _ = reader.ReadString('\n')
 			server.Write([]byte(input)) // Le paso el monto de la oferta.
@@ -85,16 +83,19 @@ func eleccionDeProducto(reader *bufio.Reader, server net.Conn) {
 	fmt.Print("Escriba su opcion (A, B o C): ")
 	input, _ := reader.ReadString('\n')
 
-	// Le mando el mensaje al Servidor.
-	server.Write([]byte(input))
+	server.Write([]byte(input)) // Le mando la opcion elegida al servidor.
 
 	fmt.Print("\nUsted ha elegido la opcion ", input)
+
+	salaDeEspera(server)
+
+}
+
+func salaDeEspera(server net.Conn) {
+
 	fmt.Print("\nPor favor espere a que ingrese una persona mas para poder comenzar con la subasta.\n\n")
 
-	// Esperamos a que llegue un cliente mas que desea el mismo producto.
-
-	message, _ := bufio.NewReader(server).ReadString('.')
+	message, _ := bufio.NewReader(server).ReadString('.') // Esperamos a que llegue un cliente mas que desea el mismo producto.
 
 	fmt.Print("\n\n" + message)
-
 }
