@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 type Client struct {
@@ -66,9 +67,14 @@ func reenviarMensajesDeClientes(client Client, clients *list.List) {
 			return
 		}
 
-		mensaje := client.nombre + string(buffer) + "." // Esto del punto lo usamos para señalar donde termina el mensaje. Es temporal.
+		var mensaje string
 
-		fmt.Println(mensaje)
+		if strings.Contains(string(buffer), "Abandona") {
+			mensaje = client.nombre + " abanono la subasta."
+			//Aca habria que quitarlo de la lista de clientes activos.
+		} else {
+			mensaje = client.nombre + string(buffer) + "." // Esto del punto lo usamos para señalar donde termina el mensaje. Es temporal.
+		}
 
 		for c := clients.Front(); c != nil; c = c.Next() {
 			c.Value.(Client).socket.Write([]byte(mensaje))

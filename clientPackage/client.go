@@ -29,9 +29,9 @@ func main() {
 
 	eleccionDeProducto(reader, server)
 
-	enviarAccionDeCliente(reader, server)
-
 	go actualizarSubasta(server)
+
+	enviarAccionDeCliente(reader, server)
 
 }
 
@@ -68,7 +68,7 @@ func enviarAccionDeCliente(reader *bufio.Reader, server net.Conn) {
 			server.Write([]byte(input)) // Le paso el monto de la oferta.
 		} else {
 			fmt.Print("\n\nGracias por participar de la subasta! \n\n")
-			server.Write([]byte("Abandona subasta.")) // Le aviso que el cliente se retira de la subasta.
+			server.Write([]byte("Abandona subasta.\n")) // Le aviso que el cliente se retira de la subasta.
 			return
 		}
 	}
