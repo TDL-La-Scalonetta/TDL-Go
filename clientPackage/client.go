@@ -28,6 +28,8 @@ func main() {
 
 	eleccionDeProducto(reader, server)
 
+	enviarAccionDeCliente(reader, server)
+
 	go actualizarSubasta(server)
 
 }
@@ -47,6 +49,20 @@ func actualizarSubasta(server net.Conn) {
 
 		fmt.Print("\n\n" + message)
 
+	}
+}
+
+func enviarAccionDeCliente(reader *bufio.Reader, server net.Conn) {
+
+	for {
+		fmt.Print("\n\nElija que desea hacer con el producto: \n\n")
+		fmt.Print("\n\nA): Hacer una oferta. \n")
+		fmt.Print("\n\nB): Retirarse. \n")
+
+		input, _ := reader.ReadString('\n')
+
+		// Le mando el mensaje al Servidor.
+		server.Write([]byte(input))
 	}
 }
 

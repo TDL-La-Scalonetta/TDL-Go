@@ -24,6 +24,8 @@ func main() {
 
 	clients := list.New()
 
+	fmt.Println("El servidor esta escuchando por nuevas conexiones . . .")
+
 	listener, err := net.Listen(connType, connHost+":"+connPort)
 	if err != nil {
 		fmt.Println("Error escuchando:", err.Error())
