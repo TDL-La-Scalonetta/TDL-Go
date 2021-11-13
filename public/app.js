@@ -75,7 +75,7 @@ let app = new Vue({
       // send message to correct room.
       if (this.offer !== "") {
         this.ws.send(JSON.stringify({
-          action: 'send-offer',
+          action: 'offer',
           offer: this.offer,
           room: this.currentRoom.Name
         }));
