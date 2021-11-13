@@ -54,7 +54,7 @@ func (user * User) disconnect() {
   log.Println("Desconectarse")
 }
 
-func (user *User) send(rM *RoomMessage) {
+func (user *User) update(rM *RoomMessage) {
   parsed, err1 := json.Marshal(rM)
   if err1 != nil {
       log.Println(err1)
@@ -70,20 +70,20 @@ func (user *User) WriteSocket() {
   for {
 			select {
         case message := <-user.Sender:
-          user.send(message)
+          user.update(message)
       }
 	}
 }
 
 func (user *User) ReadSocket() {
     for {
-        _, jsonMessage, err := user.Conn.ReadMessage()
+        _, rawMessage, err := user.Conn.ReadMessage()
         if err != nil {
             if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
                 log.Printf("unexpected close error: %v", err)
             }
             break
         }
-        user.handleMessage(jsonMessage)
+        user.handleMessage(rawMessage)
     }
 }
