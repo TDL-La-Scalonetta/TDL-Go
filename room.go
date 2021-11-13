@@ -3,9 +3,12 @@ package main
 
 import (
 	"log"
+	"strconv"
 )
+
 type Room struct {
 	Owner         User							`json:"Owner"`
+	Winner  			User							`json:"Winner"`
 	Name 					string						`json:"Name"`
 	Product 			string						`json:"Product"`
 	BaseValue 		float32						`json:"BaseValue"`
@@ -17,12 +20,14 @@ type Room struct {
 }
 
 type RoomMessage struct {
-  Owner   string
-  Name    string
-  Product string
-  Value   float32
-  Users   []string
-  Started bool
+  Owner   		string
+	Winner  		string
+  Name    		string
+  Product 		string
+  BaseValue   float32
+  Users   		[]string
+	Amount      float32
+  Started 		bool
 }
 
 func newRoom(Owner User, Name string, Product string, BaseValue float32) *Room {
@@ -50,13 +55,19 @@ func (room *Room) mapUsers() []string {
 
 func (room *Room) registerUser(user *User) {
 	room.users[user] = true
+
+	if (len(room.users) >= 3) {
+		room.Started = true
+	}
 	newRoomMessage := &RoomMessage {
 		Owner: room.Owner.Name,
+		Winner: room.Winner.Name,
 		Name: room.Name,
 		Product: room.Product,
-		Value: room.BaseValue,
+		BaseValue: room.BaseValue,
+		Amount: user.Amount,
 		Users: room.mapUsers(),
-		Started: false,
+		Started: room.Started,
 	}
 
 	for u, _ := range room.users {
@@ -69,22 +80,45 @@ func (room *Room) unregisterUser(user *User) {
 }
 
 func (room *Room) processOffer(message *UserMessage) {
-	log.Println("Nueva oferta", message)
+	currentOffer, e := strconv.ParseFloat(message.Offer, 16)
+	if (e != nil) {
+		log.Println("No se pudo parsear el valor", message.Offer)
+		return
+	}
+	validOffer := float32(currentOffer)
+
+	if (room.BaseValue < validOffer) {
+		message.User.Amount = message.User.Amount - validOffer
+		room.Winner = *message.User
+		room.BaseValue = validOffer
+	}
+
+	for u, _ := range room.users {
+		newRoomMessage := &RoomMessage {
+			Owner: room.Owner.Name,
+			Name: room.Name,
+			Winner: room.Winner.Name,
+			Product: room.Product,
+			BaseValue: room.BaseValue,
+			Users: room.mapUsers(),
+			Started: room.Started,
+			Amount: u.Amount,
+		}
+    u.Sender <-newRoomMessage
+  }
 }
 
 func (room *Room) Run() {
 	for {
 			select {
+				case user := <-room.register:
+						room.registerUser(user)
 
-			case user := <-room.register:
-					room.registerUser(user)
+				case user := <-room.unregister:
+						room.unregisterUser(user)
 
-			case user := <-room.unregister:
-					room.unregisterUser(user)
-
-			case offer := <-room.offers:
-					room.processOffer(offer)
+				case offer := <-room.offers:
+						room.processOffer(offer)
 			}
-
 	}
 }

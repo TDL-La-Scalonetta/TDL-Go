@@ -17,9 +17,9 @@
           <button @click="fetchRooms()" class="login">Ver Rooms</button>
         </div>
         <div style="display: inline">
-          <input type="text" v-model="newRoom.name">
-          <input type="text" v-model="newRoom.product">
-          <input type="text" v-model="newRoom.value">
+          <input placeholder="Nombre del room" type="text" v-model="newRoom.name">
+          <input placeholder="Producto" type="text" v-model="newRoom.product">
+          <input placeholder="Valor base" type="number" v-model="newRoom.value">
           <button @click="createRoom()" class="login">Crear Room</button>
         </div>
       </div>
@@ -43,12 +43,29 @@
     </div>
     <div class="room-container" v-else>
       <div class="subasta-room">
-        <h2>{{ currentRoom.Name }}</h2>
-        <p>{{ currentRoom.Product }}</p>
+        <div style="background: #f1f1f1; padding: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <span>{{ currentRoom.Name }}</span>
+            <span>Usuario conectados: {{ currentRoom.Users.length }}</span>
+          </div>
+        </div>
+        <h2 style="padding: 10px; margin: 10px 0px; display: flex; justify-content: space-between; align-items: center">
+          <span>{{ currentRoom.Product }}</span>
+          <span style="color: green">{{ currentRoom.Winner }}</span>
+        </h2>
         <hr>
-        <p>{{ currentRoom.BaseValue }}</p>
-        <input v-model="offer" type="number" step="0.1">
-        <button @click="sendMessage()">Ofertar</button>
+        <p>Valor Actual: ${{ currentRoom.BaseValue }}</p>
+        <hr>
+        <div>
+          <p>Cantidad disponible: {{ currentRoom.Amount }}</p>
+          <div style="display: flex; justify-content: space-between; align-items: center" v-if="currentRoom.Started">
+            <button :disabled="!enoughtMoneyFor(10)" @click="sendMessageX()">Ofertar +10</button>
+            <button :disabled="!enoughtMoneyFor(20)" @click="sendMessageXX()">Ofertar +20</button>
+            <button :disabled="!enoughtMoneyFor(30)" @click="sendMessageXXX()">Ofertar +30</button>
+            <input  v-model="offer" type="number" :placeholder="'Custom: ' + currentRoom.BaseValue" :min="currentRoom.BaseValue" step="0.1">
+            <button :disabled="!enoughtMoney" @click="sendMessage()">Ofertar</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
