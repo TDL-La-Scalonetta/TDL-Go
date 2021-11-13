@@ -56,16 +56,23 @@ func main() {
       }
       newRoom := newRoom(*user, roomParams.Name, roomParams.Product, float32(converted))
 
-      // start room server
-
       rooms[newRoom] = true
+
+      go newRoom.Run()
     })
 
     http.HandleFunc("/ws", func (w http.ResponseWriter, r *http.Request) {
-      name, ok := r.URL.Query()["name"]
+      userName, ok1 := r.URL.Query()["name"]
 
-      if !ok || len(name[0]) < 1 {
+      if !ok1 || len(userName[0]) < 1 {
           log.Println("Url Param 'name' is missing")
+          return
+      }
+
+      roomName, ok2 := r.URL.Query()["room"]
+
+      if !ok2 || len(roomName[0]) < 1 {
+          log.Println("Url Param 'room' is missing")
           return
       }
 
@@ -75,9 +82,21 @@ func main() {
         return
       }
 
-      user := findUser(name[0])
-      user.conn = conn
+      user := findUser(userName[0])
+      room := findRoom(roomName[0])
+
+      if (room == nil) {
+        log.Println("No hay room con ese nombre")
+        return
+      }
+      user.Conn = conn
+      user.Room = room
+
       users[user] = true
+
+      room.register <-user
+
+      go user.Listen()
     })
 
     log.Fatal(http.ListenAndServe(*addr, nil))
@@ -93,6 +112,11 @@ func findUser(name string) *User {
   return newUser(name)
 }
 
-func fetchRooms(list *[]Room, w http.ResponseWriter, r *http.Request) {
-
+func findRoom(name string) *Room {
+  for r, _ := range rooms {
+    if r.Name == name {
+        return r
+    }
+  }
+  return nil
 }

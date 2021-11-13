@@ -1,7 +1,9 @@
 package main
 
 import (
-    "github.com/gorilla/websocket"
+  "log"
+  "encoding/json"
+  "github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
@@ -12,14 +14,38 @@ var upgrader = websocket.Upgrader{
 type User struct {
 	Name 	 	 string
 	Amount 	 float32
-  conn     *websocket.Conn
-	rooms    map[*Room]bool
+	Conn     *websocket.Conn
+  Room     *Room
+  channel  chan []byte
 }
 
 func newUser(name string) *User {
   return &User{
     Name:     name,
     Amount: 	10000,
-    rooms:    make(map[*Room]bool),
+    channel:  make(chan []byte, 256),
   }
+}
+
+func (user *User) handleMessage(rawMessage []byte) {
+  var message Message
+  if err := json.Unmarshal(rawMessage, &message); err != nil {
+      log.Printf("Error on unmarshal JSON message %s", err)
+  }
+  message.User = user
+  // se lo pasamos al room para que lo procese
+  user.Room.offers <-&message
+}
+
+func (user *User) Listen() {
+    for {
+        _, jsonMessage, err := user.Conn.ReadMessage()
+        if err != nil {
+            if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+                log.Printf("unexpected close error: %v", err)
+            }
+            break
+        }
+        user.handleMessage(jsonMessage)
+    }
 }
