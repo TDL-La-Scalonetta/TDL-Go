@@ -89,14 +89,15 @@ func main() {
         log.Println("No hay room con ese nombre")
         return
       }
+
       user.Conn = conn
       user.Room = room
-
       users[user] = true
 
-      room.register <-user
+      go user.ReadSocket()
+      go user.WriteSocket()
 
-      go user.Listen()
+      room.register <-user
     })
 
     log.Fatal(http.ListenAndServe(*addr, nil))

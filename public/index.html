@@ -28,21 +28,21 @@
         <button @click="setUser()" class="login">Login</button>
       </div>
     </div>
-    <div class="room-container">
-      <div v-if="!currentRoom.Name">
-        <div v-for="room in rooms" class="room">
-          <div class="room-header">
-            <div class="title"><b>{{ room.Product}}</b></h4></div>
-            <div class="subtitle">{{ room.Name }}</div>
-          </div>
-          <div class="room-body">
-            <p>Precio: {{ room.BaseValue}}</p>
-            <p>Participantes: {{ room.Participants}}</p>
-            <div v-if="authenticated"><a class="connect" @click="connect(room)">Ingresar</a></div>
-          </div>
+    <div class="room-container" v-if="!currentRoom.Name">
+      <div v-for="room in rooms" class="room">
+        <div class="room-header">
+          <div class="title"><b>{{ room.Product}}</b></h4></div>
+          <div class="subtitle">{{ room.Name }}</div>
+        </div>
+        <div class="room-body">
+          <p>Precio: {{ room.BaseValue}}</p>
+          <p>Participantes: {{ room.Participants}}</p>
+          <div v-if="authenticated"><a class="connect" @click="connect(room)">Ingresar</a></div>
         </div>
       </div>
-      <div v-else>
+    </div>
+    <div class="room-container" v-else>
+      <div class="subasta-room">
         <h2>{{ currentRoom.Name }}</h2>
         <p>{{ currentRoom.Product }}</p>
         <hr>
@@ -78,6 +78,13 @@
     .subtitle {
       font-size:  12px;
       padding:  5px 0px;
+    }
+    .subasta-room {
+      width: 60%;
+      margin: auto;
+      border: solid 2px #f1f1f1;
+      padding: 30px;
+      border-radius: 5px;
     }
     .login {
       background: orangered;

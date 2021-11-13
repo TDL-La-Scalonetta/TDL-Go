@@ -12,32 +12,70 @@ var upgrader = websocket.Upgrader{
 }
 
 type User struct {
-	Name 	 	 string
-	Amount 	 float32
-	Conn     *websocket.Conn
-  Room     *Room
-  channel  chan []byte
+	Name 	 	  string            `json:"Name"`
+	Amount 	  float32           `json:"Amount"`
+	Conn      *websocket.Conn   `json:"-"`
+  Room      *Room             `json:"-"`
+  Sender    chan *RoomMessage `json:"-"`
+}
+
+type UserMessage struct {
+  Action  string
+  Offer   string
+  Room    string
+  User    *User
 }
 
 func newUser(name string) *User {
   return &User{
     Name:     name,
     Amount: 	10000,
-    channel:  make(chan []byte, 256),
+    Sender:   make(chan *RoomMessage),
   }
 }
 
 func (user *User) handleMessage(rawMessage []byte) {
-  var message Message
+  var message UserMessage
   if err := json.Unmarshal(rawMessage, &message); err != nil {
       log.Printf("Error on unmarshal JSON message %s", err)
   }
-  message.User = user
-  // se lo pasamos al room para que lo procese
-  user.Room.offers <-&message
+
+  switch message.Action {
+  case "offer":
+      message.User = user
+      user.Room.offers <-&message
+  case "leave":
+      user.Room.unregister <-user
+      user.disconnect()
+  }
 }
 
-func (user *User) Listen() {
+func (user * User) disconnect() {
+  log.Println("Desconectarse")
+}
+
+func (user *User) send(rM *RoomMessage) {
+  parsed, err1 := json.Marshal(rM)
+  if err1 != nil {
+      log.Println(err1)
+  }
+
+  err2 := user.Conn.WriteMessage(websocket.TextMessage, parsed)
+  if err2 != nil {
+      log.Println(err2)
+  }
+}
+
+func (user *User) WriteSocket() {
+  for {
+			select {
+        case message := <-user.Sender:
+          user.send(message)
+      }
+	}
+}
+
+func (user *User) ReadSocket() {
     for {
         _, jsonMessage, err := user.Conn.ReadMessage()
         if err != nil {
