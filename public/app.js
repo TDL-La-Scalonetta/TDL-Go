@@ -5,22 +5,24 @@ let app = new Vue({
     return {
       ws: null,
       serverUrl: "ws://localhost:8080/ws",
-      roomInput: null,
       newRoom: {
         name: '',
         product: '',
         value: ''
       },
+      offer: 0.0,
       rooms: [],
-      activeRooms: [],
+      currentRoom: {},
       user: { name: null },
       authenticated: false
     }
   },
+  created() {
+    this.fetchRooms()
+  },
   methods: {
     setUser() {
       this.authenticated = true
-      this.connect()
     },
     fetchRooms() {
       this.$http.get("/rooms").then(res => {
@@ -34,19 +36,32 @@ let app = new Vue({
         "Product": this.newRoom.product,
         "Value": this.newRoom.value
       }).then(res => {
-        console.log('Success')
+        this.newRoom = {
+          name: '',
+          product: '',
+          value: ''
+        }
+        this.fetchRooms()
       })
     },
-    connect() {
-      this.ws = new WebSocket(`${this.serverUrl}?name=${this.user.name}`);
+    connect(room) {
+      try {
+        this.ws = new WebSocket(`${this.serverUrl}?room=${room.Name}&name=${this.user.name}`);
 
-      this.ws.addEventListener('open', (event) => {
-        this.onWebsocketOpen(event)
-      });
+        this.ws.addEventListener('open', (event) => {
+          this.onWebsocketOpen(event)
+        });
 
-      this.ws.addEventListener('message', (event) => {
-        this.handleNewMessage(event)
-      });
+        this.ws.addEventListener('message', (event) => {
+          this.handleNewMessage(event)
+        });
+        this.currentRoom = room
+      } catch(error) {
+        console.log('Error al conectarse')
+      }
+    },
+    disconnect() {
+      console.log("Salir")
     },
     onWebsocketOpen() {
       console.log("connected to WS!");
@@ -56,30 +71,16 @@ let app = new Vue({
       // check data type (accepted, refused, roomUpdate)
       console.log('Data received', data)
     },
-    sendMessage(room) {
+    sendMessage() {
       // send message to correct room.
-      if (room.newMessage !== "") {
+      if (this.offer !== "") {
         this.ws.send(JSON.stringify({
           action: 'send-offer',
-          offer: room.offer,
-          target: room.name
+          offer: this.offer,
+          room: this.currentRoom.Name
         }));
-        room.offer = "";
+        this.offer = "";
       }
-    },
-    joinRoom(room) {
-      console.log("Join to room", room)
-      console.log(this.ws)
-      this.ws.send(JSON.stringify({
-        action: 'join-room',
-        message: room.name
-      }));
-    },
-    leaveRoom(room) {
-      this.ws.send(JSON.stringify({
-        action: 'leave-room',
-        message: room.name
-      }));
     }
   }
 })

@@ -29,16 +29,26 @@
       </div>
     </div>
     <div class="room-container">
-      <div v-for="room in rooms" class="room">
-        <div class="room-header">
-          <div class="title"><b>{{ room.Product}}</b></h4></div>
-          <div class="subtitle">{{ room.Name }}</div>
+      <div v-if="!currentRoom.Name">
+        <div v-for="room in rooms" class="room">
+          <div class="room-header">
+            <div class="title"><b>{{ room.Product}}</b></h4></div>
+            <div class="subtitle">{{ room.Name }}</div>
+          </div>
+          <div class="room-body">
+            <p>Precio: {{ room.BaseValue}}</p>
+            <p>Participantes: {{ room.Participants}}</p>
+            <div v-if="authenticated"><a class="connect" @click="connect(room)">Ingresar</a></div>
+          </div>
         </div>
-        <div class="room-body">
-          <p>Precio: {{ room.BaseValue}}</p>
-          <p>Participantes: {{ room.Participants}}</p>
-          <div v-if="authenticated"><a class="connect" @click="joinRoom(room)">Ingresar</a></div>
-        </div>
+      </div>
+      <div v-else>
+        <h2>{{ currentRoom.Name }}</h2>
+        <p>{{ currentRoom.Product }}</p>
+        <hr>
+        <p>{{ currentRoom.BaseValue }}</p>
+        <input v-model="offer" type="number" step="0.1">
+        <button @click="sendMessage()">Ofertar</button>
       </div>
     </div>
   </div>
