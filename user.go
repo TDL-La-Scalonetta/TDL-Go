@@ -46,15 +46,14 @@ func (user *User) handleMessage(rawMessage []byte) {
       user.Room.offers <-&message
   case "leave":
       user.Room.unregister <-user
-      user.disconnect()
   }
 }
 
-func (user * User) disconnect() {
+func (user *User) disconnect() {
   log.Println("Desconectarse")
 }
 
-func (user *User) update(rM *RoomMessage) {
+func (user *User) updateStatus(rM *RoomMessage) {
   parsed, err1 := json.Marshal(rM)
   if err1 != nil {
       log.Println(err1)
@@ -70,7 +69,7 @@ func (user *User) WriteSocket() {
   for {
 			select {
         case message := <-user.Sender:
-          user.update(message)
+          user.updateStatus(message)
       }
 	}
 }

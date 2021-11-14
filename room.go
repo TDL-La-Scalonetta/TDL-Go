@@ -4,6 +4,7 @@ package main
 import (
 	"log"
 	"strconv"
+	"time"
 )
 
 type Room struct {
@@ -13,6 +14,7 @@ type Room struct {
 	Product 			string						`json:"Product"`
 	BaseValue 		float32						`json:"BaseValue"`
 	Started				bool							`json:"Started"`
+	Timer         *time.Ticker
 	users 				map[*User]bool		`json:"-"`
 	register 			chan *User				`json:"-"`
 	unregister 		chan *User				`json:"-"`
@@ -44,6 +46,31 @@ func newRoom(Owner User, Name string, Product string, BaseValue float32) *Room {
 	}
 }
 
+func (room *Room) StartTimer() {
+	room.Timer = time.NewTicker(time.Second)
+	done := make(chan bool)
+  for {
+    select {
+    	case <-done:
+        return
+    	case t := <-room.Timer.C:
+        log.Println("Timer is running", t)
+    }
+  }
+}
+
+func (room *Room) createMessage() *RoomMessage {
+	return &RoomMessage {
+		Owner: room.Owner.Name,
+		Winner: room.Winner.Name,
+		Name: room.Name,
+		Product: room.Product,
+		BaseValue: room.BaseValue,
+		Users: room.mapUsers(),
+		Started: room.Started,
+	}
+}
+
 func (room *Room) mapUsers() []string {
   var list = make([]string, 0)
   for user, _ := range room.users {
@@ -58,25 +85,26 @@ func (room *Room) registerUser(user *User) {
 
 	if (len(room.users) >= 3) {
 		room.Started = true
+		if (room.Timer == nil) { go room.StartTimer() }
 	}
-	newRoomMessage := &RoomMessage {
-		Owner: room.Owner.Name,
-		Winner: room.Winner.Name,
-		Name: room.Name,
-		Product: room.Product,
-		BaseValue: room.BaseValue,
-		Amount: user.Amount,
-		Users: room.mapUsers(),
-		Started: room.Started,
-	}
-
+	newRoomMessage := room.createMessage()
 	for u, _ := range room.users {
-    u.Sender <-newRoomMessage
+		u.Sender <-newRoomMessage
   }
 }
 
 func (room *Room) unregisterUser(user *User) {
 	log.Println("Sale usuario", user)
+	room.users[user] = false
+	users[user] = false
+
+	user.disconnect()
+
+	newRoomMessage := room.createMessage()
+
+	for u, _ := range room.users {
+    u.Sender <-newRoomMessage
+  }
 }
 
 func (room *Room) processOffer(message *UserMessage) {
@@ -88,22 +116,11 @@ func (room *Room) processOffer(message *UserMessage) {
 	validOffer := float32(currentOffer)
 
 	if (room.BaseValue < validOffer) {
-		message.User.Amount = message.User.Amount - validOffer
 		room.Winner = *message.User
 		room.BaseValue = validOffer
 	}
-
+	newRoomMessage := room.createMessage()
 	for u, _ := range room.users {
-		newRoomMessage := &RoomMessage {
-			Owner: room.Owner.Name,
-			Name: room.Name,
-			Winner: room.Winner.Name,
-			Product: room.Product,
-			BaseValue: room.BaseValue,
-			Users: room.mapUsers(),
-			Started: room.Started,
-			Amount: u.Amount,
-		}
     u.Sender <-newRoomMessage
   }
 }

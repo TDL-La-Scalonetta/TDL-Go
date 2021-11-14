@@ -10,7 +10,7 @@
 <body>
   <div id="app">
     <h2>Subastas!</h2>
-    <div class="user-container">
+    <div class="user-container" v-if="!currentRoom.Name">
       <div v-if="authenticated" class="loggedin">
         <div>
           Ingresaste como: <b>{{ user.name }}</b>
@@ -43,27 +43,29 @@
     </div>
     <div class="room-container" v-else>
       <div class="subasta-room">
-        <div style="background: #f1f1f1; padding: 10px;">
+        <div style="text-align: center; padding: 10px; text-transform: uppercase; color: indianred;">{{ user.name }}</div>
+        <div style="background: #f1f1f1; border-radius: 5px; padding: 10px; margin: 0px 10px 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center">
-            <span>{{ currentRoom.Name }}</span>
+            <span>Subasta: {{ currentRoom.Name }}</span>
             <span>Usuario conectados: {{ currentRoom.Users.length }}</span>
           </div>
         </div>
-        <h2 style="padding: 10px; margin: 10px 0px; display: flex; justify-content: space-between; align-items: center">
-          <span>{{ currentRoom.Product }}</span>
-          <span style="color: green">{{ currentRoom.Winner }}</span>
+        <h2 style="padding: 20px; margin: 10px 0px; display: flex; justify-content: space-between; align-items: center">
+          <span>Producto: <b>{{ currentRoom.Product }}</b></span>
+          <span style="color: mediumseagreen; text-transform: uppercase;">{{ currentRoom.Winner }}</span>
         </h2>
-        <hr>
-        <p>Valor Actual: ${{ currentRoom.BaseValue }}</p>
-        <hr>
-        <div>
-          <p>Cantidad disponible: {{ currentRoom.Amount }}</p>
-          <div style="display: flex; justify-content: space-between; align-items: center" v-if="currentRoom.Started">
-            <button :disabled="!enoughtMoneyFor(10)" @click="sendMessageX()">Ofertar +10</button>
-            <button :disabled="!enoughtMoneyFor(20)" @click="sendMessageXX()">Ofertar +20</button>
-            <button :disabled="!enoughtMoneyFor(30)" @click="sendMessageXXX()">Ofertar +30</button>
-            <input  v-model="offer" type="number" :placeholder="'Custom: ' + currentRoom.BaseValue" :min="currentRoom.BaseValue" step="0.1">
-            <button :disabled="!enoughtMoney" @click="sendMessage()">Ofertar</button>
+        <p style="text-align: center; padding: 20px; border-top: solid 1px #999; margin: 10px;">
+          <span style="font-size: 14px">Valor Actual</span>
+          <br>
+          <span style="font-size: 45px; color: orange;">${{ currentRoom.BaseValue }}</span>
+        </p>
+        <div style="padding: 20px; margin: 10px; border-top: solid 1px #999; display: flex; justify-content: space-between; align-items: center" v-if="currentRoom.Started">
+          <button class="offer" @click="sendMessageX()">Ofertar +10</button>
+          <button class="offer" @click="sendMessageXX()">Ofertar +20</button>
+          <button class="offer" @click="sendMessageXXX()">Ofertar +30</button>
+          <div>
+            <input  v-model="offer" type="number" :placeholder="'Minimo: ' + currentRoom.BaseValue" :min="currentRoom.BaseValue" step="0.1">
+            <button class="offer" @click="sendMessage()">Ofertar</button>
           </div>
         </div>
       </div>
@@ -100,11 +102,18 @@
       width: 60%;
       margin: auto;
       border: solid 2px #f1f1f1;
-      padding: 30px;
       border-radius: 5px;
     }
     .login {
       background: orangered;
+      color:  white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      margin:  0px 10px;
+      border: none;
+    }
+    .offer {
+      background: cornflowerblue;
       color:  white;
       padding: 5px 10px;
       border-radius: 5px;
