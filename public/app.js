@@ -26,20 +26,12 @@ let app = new Vue({
       authenticated: false
     }
   },
-  computed: {
-    enoughtMoney() {
-      return Number(this.offer) < Number(this.currentRoom.Amount);
-    }
-  },
   created() {
     this.fetchRooms()
   },
   methods: {
     setUser() {
       this.authenticated = true
-    },
-    enoughtMoneyFor(inc) {
-      return (Number(this.currentRoom.BaseValue) + Number(inc)) < Number(this.currentRoom.Amount);
     },
     fetchRooms() {
       this.$http.get("/rooms").then(res => {
