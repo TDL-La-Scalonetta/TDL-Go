@@ -88,7 +88,7 @@ func (room *Room) createMessage() *RoomMessage {
 
 func (room *Room) mapUsers() []string {
 	var list = make([]string, 0)
-	for user, _ := range room.users {
+	for user := range room.users {
 		list = append(list, user.Name)
 	}
 
@@ -105,7 +105,7 @@ func (room *Room) registerUser(user *User) {
 		}
 	}
 	newRoomMessage := room.createMessage()
-	for u, _ := range room.users {
+	for u := range room.users {
 		u.Sender <- newRoomMessage
 	}
 }
@@ -119,13 +119,13 @@ func (room *Room) unregisterUser(user *User) {
 
 	newRoomMessage := room.createMessage()
 
-	for u, _ := range room.users {
+	for u := range room.users {
 		u.Sender <- newRoomMessage
 	}
 }
 
 func (room *Room) processOffer(message *UserMessage) {
-	currentOffer, e := strconv.ParseFloat(message.Offer, 16)
+	currentOffer, e := strconv.ParseFloat(message.Offer, 32)
 	if e != nil {
 		log.Println("No se pudo parsear el valor", message.Offer)
 		return
@@ -137,7 +137,7 @@ func (room *Room) processOffer(message *UserMessage) {
 		room.BaseValue = validOffer
 	}
 	newRoomMessage := room.createMessage()
-	for u, _ := range room.users {
+	for u := range room.users {
 		u.Sender <- newRoomMessage
 	}
 }

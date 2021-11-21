@@ -28,7 +28,7 @@ func main() {
 	http.HandleFunc("/rooms", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		list := make([]*Room, 0)
-		for room, _ := range rooms {
+		for room := range rooms {
 			list = append(list, room)
 		}
 		var data, err = json.Marshal(list)
@@ -50,7 +50,7 @@ func main() {
 
 		user := findUser(roomParams.Owner)
 
-		converted, e := strconv.ParseFloat(roomParams.Value, 16)
+		converted, e := strconv.ParseFloat(roomParams.Value, 32)
 		if e != nil {
 			panic(e)
 		}
@@ -104,7 +104,7 @@ func main() {
 }
 
 func findUser(name string) *User {
-	for u, _ := range users {
+	for u := range users {
 		if u.Name == name {
 			return u
 		}
@@ -114,7 +114,7 @@ func findUser(name string) *User {
 }
 
 func findRoom(name string) *Room {
-	for r, _ := range rooms {
+	for r := range rooms {
 		if r.Name == name {
 			return r
 		}
