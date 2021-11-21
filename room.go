@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	defaultTime = 30 * time.Minute
+)
+
 type Room struct {
 	Owner      User    `json:"Owner"`
 	Winner     User    `json:"Winner"`
@@ -19,6 +23,8 @@ type Room struct {
 	register   chan *User        `json:"-"`
 	unregister chan *User        `json:"-"`
 	offers     chan *UserMessage `json:"-"`
+	StartTime  time.Time         `json:"-"`
+	EndTime    time.Time         `json:"-"`
 }
 
 type RoomMessage struct {
@@ -48,10 +54,12 @@ func newRoom(Owner User, Name string, Product string, BaseValue float32) *Room {
 
 func (room *Room) StartTimer() {
 	ticker := time.NewTicker(time.Second)
+	room.StartTime = time.Now()
+	room.EndTime = room.StartTime.Add(defaultTime)
 	defer ticker.Stop()
 	done := make(chan bool)
 	go func() {
-		time.Sleep(30 * time.Minute)
+		time.Sleep(defaultTime)
 		done <- true
 	}()
 	for {
@@ -60,7 +68,7 @@ func (room *Room) StartTimer() {
 			fmt.Println("Termino la Subasta!") // Ver como terminar la subasta por timer
 			return
 		case <-ticker.C:
-			timeLeft := 30*time.Minute - time.Since(time.Now())
+			timeLeft := room.EndTime.Sub(time.Now())
 			fmt.Println("Tiempo restante:", timeLeft)
 		}
 	}
