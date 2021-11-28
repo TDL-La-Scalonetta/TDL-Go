@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
-	"fmt"
 )
 
 var upgrader = websocket.Upgrader{
@@ -45,16 +44,9 @@ func (user *User) handleMessage(rawMessage []byte) {
 		case "offer":
 			message.User = user
 			user.Room.offers <- &message
-		case "leave":
-			user.Room.unregister <- user
 		case "finish":
 			user.Room.finish <- true
 	}
-}
-
-func (user *User) disconnect() {
-	fmt.Println("Cerramos la conexion del socket", user)
-	user.Conn.Close()
 }
 
 func (user *User) updateStatus(rM *RoomMessage) {
@@ -65,23 +57,21 @@ func (user *User) updateStatus(rM *RoomMessage) {
 
 	err2 := user.Conn.WriteMessage(websocket.TextMessage, parsed)
 	if err2 != nil {
-		log.Println("Error escribiendo en el socket")
-		log.Println(err2)
+		log.Println("Error escribiendo en el socket", err2)
 	}
 }
 
 func (user *User) ReadSocket() {
 	defer func() {
-		user.disconnect()
+		user.Room.unregister<-user
+		user.Conn.Close()
 	}()
 	for {
-		_, rawMessage, err := user.Conn.ReadMessage()
+		d, rawMessage, err := user.Conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("unexpected close error: %v", err)
-			}
-			break
+			return
+		} else {
+			user.handleMessage(rawMessage)
 		}
-		user.handleMessage(rawMessage)
 	}
 }

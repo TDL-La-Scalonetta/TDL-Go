@@ -31,6 +31,9 @@ let app = new Vue({
   computed: {
     canOffer() {
       return this.currentRoom.Started && !this.currentRoom.Finished
+    },
+    isOwner() {
+      return this.user.name == this.currentRoom.Owner
     }
   },
   methods: {
@@ -58,20 +61,21 @@ let app = new Vue({
       try {
         this.ws = new WebSocket(`${this.serverUrl}?room=${room.Name}&name=${this.user.name}`);
 
-        this.ws.addEventListener('open', (event) => {
-          this.onWebsocketOpen(event)
-        });
-
         this.ws.addEventListener('message', (event) => {
           this.handleNewMessage(event)
         });
 
-        this.ws.addEventListener('close', (event) => {
-          this.onWebsocketClose(event)
+        this.ws.addEventListener('open', (event) => {
+          console.log("Connected to WS!", event);
         });
 
         this.ws.addEventListener('error', (event) => {
-          this.onWebsocketError(event)
+          console.log("Error on WS!", event);
+        });
+
+        this.ws.addEventListener('close', (event) => {
+          console.log("Disconnected from WS!", event);
+          this.ws.close(1000);
         });
       } catch(error) {
         console.log('Error al conectarse')
@@ -85,12 +89,7 @@ let app = new Vue({
       this.push(m)
     },
     disconnect() {
-      let m = {
-        action: 'leave',
-        room: this.currentRoom.Name
-      }
-      this.push(m)
-      this.ws.close()
+      this.ws.close(1000)
       this.currentRoom = {
         Name: null,
         Owner: null,
@@ -103,15 +102,6 @@ let app = new Vue({
         Amount: 0,
         Users: []
       }
-    },
-    onWebsocketError(event) {
-      console.log("Error on WS!", event);
-    },
-    onWebsocketClose(event) {
-      console.log("disconnected from WS!", event);
-    },
-    onWebsocketOpen(event) {
-      console.log("connected to WS!", event);
     },
     handleNewMessage(event) {
       let data = JSON.parse(event.data);
@@ -129,8 +119,7 @@ let app = new Vue({
       this.currentRoom.Amount = data.Amount
       this.currentRoom.Users = data.Users
 
-      if (data.Type == 'Ended')
-        console.log("subasta finalizadaa", data)
+      if (data.Type == 'Ended') this.ws.close(1000)
     },
     sendMessageX() {
       this.offer = Number(this.currentRoom.BaseValue) + 10

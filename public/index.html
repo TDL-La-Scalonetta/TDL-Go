@@ -44,7 +44,7 @@
     <div class="room-container" v-else>
       <div class="subasta-room">
         <div style="display: flex;justify-content: space-between; text-transform: uppercase; color: indianred; padding: 20px 15px;">
-          <span @click="finish()" style="cursor: pointer;" v-if="user.name == currentRoom.Owner">Terminar</span>
+          <span @click="finish()" style="cursor: pointer;" v-if="isOwner">Terminar</span>
           <span>{{ user.name }}</span>
           <span @click="disconnect()" style="cursor: pointer;">Salir</span>
         </div>
@@ -65,7 +65,7 @@
           <span style="font-size: 45px; color: orange;">${{ currentRoom.BaseValue }}</span>
         </p>
         <div style="padding: 20px; margin: 10px; border-top: solid 1px #999;">
-          <div v-if="canOffer" style="display: flex; justify-content: space-between; align-items: center">
+          <div v-if="canOffer && !isOwner" style="display: flex; justify-content: space-between; align-items: center">
             <button class="offer" @click="sendMessageX()">Ofertar +10</button>
             <button class="offer" @click="sendMessageXX()">Ofertar +20</button>
             <button class="offer" @click="sendMessageXXX()">Ofertar +30</button>

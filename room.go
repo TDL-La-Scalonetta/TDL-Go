@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"sort"
 )
 
 type Room struct {
@@ -87,16 +88,12 @@ func (room *Room) createMessage(messageType string) *RoomMessage {
 	}
 }
 
-func (room *Room) closeSubasta(finished bool) {
-	room.stopClock<-true
-	room.Finished = finished
+func (room *Room) closeSubasta() {
+	fmt.Println("Fin de la subasta!")
+	room.Finished = true
 	newRoomMessage := room.createMessage("Ended")
 	room.notify(newRoomMessage)
-
-	for user, _ := range room.users {
-		delete(room.users, user)
-		user.disconnect()
-	}
+	fmt.Println("El ganador es:", room.Winner.Name, room.BaseValue)
 }
 
 // Process messages
@@ -108,8 +105,6 @@ func (room *Room) RegisterUser(user *User) {
 
 func (room *Room) UnregisterUser(user *User) {
 	delete(room.users, user)
-	user.disconnect()
-
 	newRoomMessage := room.createMessage("Leave")
 	room.notify(newRoomMessage)
 }
@@ -139,25 +134,39 @@ func (room *Room) StartSubasta() {
 			list = append(list, user.Name)
 		}
 	}
-
+	fmt.Println("Iniciamos la subasta si los usuarios no-owner son mas de tres: ", len(list))
 	if len(list) >= 3 {
-		room.Started = true
 		if (room.Timer == nil) {
 			go room.Clock()
 		}
-
-		newRoomMessage := room.createMessage("Started")
-		room.notify(newRoomMessage)
+		if (room.Started == false) {
+			room.Started = true
+			fmt.Println("Creamos la notificacion que se inicia.")
+			newRoomMessage := room.createMessage("Started")
+			room.notify(newRoomMessage)
+			fmt.Println("Enviamos notificacion de inicio a ", len(room.users))
+		}
 	}
 }
 
 func (room *Room) EndSubasta() {
-	if (len(room.users) == 1) {
-		for u, _ := range room.users {
-			room.Winner = *u
-			room.BaseValue = u.LastOffer
+	var list = make([]*User, 0)
+	for user, _ := range room.users {
+		if (user.Name != room.Owner.Name) {
+			list = append(list, user)
 		}
+	}
+
+	if (len(list) == 1) {
+		// Terminamos si queda uno solo
+		room.Winner = *list[0]
+		room.BaseValue = list[0].LastOffer
 		room.finish <-true
+	} else {
+		// Si se fue el que era el winner, ponemos al que haya hecho la oferta mayor.
+		sort.Slice(list, func(i, j int) bool { return list[i].LastOffer > list[j].LastOffer })
+		room.Winner = *list[0]
+		room.BaseValue = list[0].LastOffer
 	}
 }
 
@@ -166,7 +175,7 @@ func (room *Room) Clock() {
 	room.Timer = time.NewTicker(time.Second)
 
 	defer func() {
-		fmt.Println("Stop timer")
+		fmt.Println("Se detiene el timer")
 		room.Timer.Stop()
 	}()
 
@@ -176,24 +185,26 @@ func (room *Room) Clock() {
 				return
 			case <-room.Timer.C:
 				room.TimeLeft -= time.Second
-				fmt.Println("Tiempo restante", room.TimeLeft)
 				newRoomMessage := room.createMessage("Time")
 				room.notify(newRoomMessage)
 
 				if (room.TimeLeft == 0) {
-					fmt.Println("Se termino el tiempo")
+					fmt.Println("Se termino el tiempo, cerramos la subasta.")
 					room.finish<-true
-					return
 				}
 		}
 	}
 }
 
 func (room *Room) Run() {
+	defer func() {
+		room.stopClock<-true
+		room.closeSubasta()
+	}()
+
 	for {
 		select {
-			case finished := <-room.finish:
-				room.closeSubasta(finished)
+			case <-room.finish:
 				return
 			case user := <-room.register:
 				room.RegisterUser(user)
