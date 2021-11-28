@@ -2,26 +2,26 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
-	"sort"
 )
 
 type Room struct {
-	Owner      User    `json:"Owner"`
-	Winner     User    `json:"Winner"`
-	Name       string  `json:"Name"`
-	Product    string  `json:"Product"`
-	BaseValue  float32 `json:"BaseValue"`
-	Started    bool    `json:"Started"`
-	Finished   bool    `json:"Finished"`
+	Owner      User              `json:"Owner"`
+	Winner     User              `json:"Winner"`
+	Name       string            `json:"Name"`
+	Product    string            `json:"Product"`
+	BaseValue  float32           `json:"BaseValue"`
+	Started    bool              `json:"Started"`
+	Finished   bool              `json:"Finished"`
 	TimeLeft   time.Duration     `json:"TimeLeft"`
-	Timer      *time.Ticker			 `json:"-"`
+	Timer      *time.Ticker      `json:"-"`
 	users      map[*User]bool    `json:"-"`
 	register   chan *User        `json:"-"`
-	finish     chan bool 				 `json:"-"`
+	finish     chan bool         `json:"-"`
 	unregister chan *User        `json:"-"`
-	stopClock  chan bool 				 `json:"-"`
+	stopClock  chan bool         `json:"-"`
 	offers     chan *UserMessage `json:"-"`
 }
 
@@ -34,13 +34,13 @@ type RoomMessage struct {
 	BaseValue float32
 	Users     []string
 	Amount    float32
-	TimeLeft	string
+	TimeLeft  string
 	Started   bool
 	Finished  bool
 }
 
 func newRoom(Owner User, Name string, Product string, BaseValue float32) *Room {
-	duration, _ := time.ParseDuration("1m")
+	duration, _ := time.ParseDuration("5m")
 	return &Room{
 		Owner:      Owner,
 		Name:       Name,
@@ -117,7 +117,7 @@ func (room *Room) ProcessOffer(message *UserMessage) {
 	}
 	validOffer := float32(currentOffer)
 
-	if (room.BaseValue < validOffer) {
+	if room.BaseValue < validOffer {
 		room.Winner = *message.User
 		room.BaseValue = validOffer
 		message.User.LastOffer = validOffer
@@ -136,10 +136,10 @@ func (room *Room) StartSubasta() {
 	}
 	fmt.Println("Iniciamos la subasta si los usuarios no-owner son mas de tres: ", len(list))
 	if len(list) >= 3 {
-		if (room.Timer == nil) {
+		if room.Timer == nil {
 			go room.Clock()
 		}
-		if (room.Started == false) {
+		if room.Started == false {
 			room.Started = true
 			fmt.Println("Creamos la notificacion que se inicia.")
 			newRoomMessage := room.createMessage("Started")
@@ -152,16 +152,16 @@ func (room *Room) StartSubasta() {
 func (room *Room) EndSubasta() {
 	var list = make([]*User, 0)
 	for user, _ := range room.users {
-		if (user.Name != room.Owner.Name) {
+		if user.Name != room.Owner.Name {
 			list = append(list, user)
 		}
 	}
 
-	if (len(list) == 1) {
+	if len(list) == 1 {
 		// Terminamos si queda uno solo
 		room.Winner = *list[0]
 		room.BaseValue = list[0].LastOffer
-		room.finish <-true
+		room.finish <- true
 	} else {
 		// Si se fue el que era el winner, ponemos al que haya hecho la oferta mayor.
 		sort.Slice(list, func(i, j int) bool { return list[i].LastOffer > list[j].LastOffer })
@@ -181,39 +181,39 @@ func (room *Room) Clock() {
 
 	for {
 		select {
-			case <-room.stopClock:
-				return
-			case <-room.Timer.C:
-				room.TimeLeft -= time.Second
-				newRoomMessage := room.createMessage("Time")
-				room.notify(newRoomMessage)
+		case <-room.stopClock:
+			return
+		case <-room.Timer.C:
+			room.TimeLeft -= time.Second
+			newRoomMessage := room.createMessage("Time")
+			room.notify(newRoomMessage)
 
-				if (room.TimeLeft == 0) {
-					fmt.Println("Se termino el tiempo, cerramos la subasta.")
-					room.finish<-true
-				}
+			if room.TimeLeft == 0 {
+				fmt.Println("Se termino el tiempo, cerramos la subasta.")
+				room.finish <- true
+			}
 		}
 	}
 }
 
 func (room *Room) Run() {
 	defer func() {
-		room.stopClock<-true
+		room.stopClock <- true
 		room.closeSubasta()
 	}()
 
 	for {
 		select {
-			case <-room.finish:
-				return
-			case user := <-room.register:
-				room.RegisterUser(user)
-				room.StartSubasta()
-			case user := <-room.unregister:
-				room.UnregisterUser(user)
-				room.EndSubasta()
-			case offer := <-room.offers:
-				room.ProcessOffer(offer)
+		case <-room.finish:
+			return
+		case user := <-room.register:
+			room.RegisterUser(user)
+			room.StartSubasta()
+		case user := <-room.unregister:
+			room.UnregisterUser(user)
+			room.EndSubasta()
+		case offer := <-room.offers:
+			room.ProcessOffer(offer)
 		}
 	}
 }
