@@ -67,7 +67,7 @@ func (user *User) ReadSocket() {
 		user.Conn.Close()
 	}()
 	for {
-		d, rawMessage, err := user.Conn.ReadMessage()
+		_, rawMessage, err := user.Conn.ReadMessage()
 		if err != nil {
 			return
 		} else {
