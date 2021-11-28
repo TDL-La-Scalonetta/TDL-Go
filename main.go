@@ -10,7 +10,6 @@ import (
 
 var addr = flag.String("addr", ":8080", "http server address")
 var rooms = make(map[*Room]bool)
-var users = make(map[*User]bool)
 
 type RoomParams struct {
 	Owner   string
@@ -92,24 +91,15 @@ func main() {
 
 		user.Conn = conn
 		user.Room = room
-		users[user] = true
+		room.register <- user
 
 		go user.ReadSocket()
-		go user.WriteSocket()
-
-		room.register <- user
 	})
 
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
 func findUser(name string) *User {
-	for u, _ := range users {
-		if u.Name == name {
-			return u
-		}
-	}
-
 	return newUser(name)
 }
 

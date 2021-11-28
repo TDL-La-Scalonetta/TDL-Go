@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
+	"fmt"
 )
 
 var upgrader = websocket.Upgrader{
@@ -12,11 +13,11 @@ var upgrader = websocket.Upgrader{
 }
 
 type User struct {
-	Name   string            `json:"Name"`
-	Amount float32           `json:"Amount"`
-	Conn   *websocket.Conn   `json:"-"`
-	Room   *Room             `json:"-"`
-	Sender chan *RoomMessage `json:"-"`
+	Name   		string            `json:"Name"`
+	LastOffer float32           `json:"LastOffer"`
+	Conn   		*websocket.Conn   `json:"-"`
+	Room  		*Room             `json:"-"`
+	Sender 		chan *RoomMessage `json:"-"`
 }
 
 type UserMessage struct {
@@ -29,7 +30,7 @@ type UserMessage struct {
 func newUser(name string) *User {
 	return &User{
 		Name:   name,
-		Amount: 10000,
+		LastOffer: 0,
 		Sender: make(chan *RoomMessage),
 	}
 }
@@ -41,16 +42,19 @@ func (user *User) handleMessage(rawMessage []byte) {
 	}
 
 	switch message.Action {
-	case "offer":
-		message.User = user
-		user.Room.offers <- &message
-	case "leave":
-		user.Room.unregister <- user
+		case "offer":
+			message.User = user
+			user.Room.offers <- &message
+		case "leave":
+			user.Room.unregister <- user
+		case "finish":
+			user.Room.finish <- true
 	}
 }
 
 func (user *User) disconnect() {
-	log.Println("Desconectarse")
+	fmt.Println("Cerramos la conexion del socket", user)
+	user.Conn.Close()
 }
 
 func (user *User) updateStatus(rM *RoomMessage) {
@@ -61,20 +65,15 @@ func (user *User) updateStatus(rM *RoomMessage) {
 
 	err2 := user.Conn.WriteMessage(websocket.TextMessage, parsed)
 	if err2 != nil {
+		log.Println("Error escribiendo en el socket")
 		log.Println(err2)
 	}
 }
 
-func (user *User) WriteSocket() {
-	for {
-		select {
-		case message := <-user.Sender:
-			user.updateStatus(message)
-		}
-	}
-}
-
 func (user *User) ReadSocket() {
+	defer func() {
+		user.disconnect()
+	}()
 	for {
 		_, rawMessage, err := user.Conn.ReadMessage()
 		if err != nil {

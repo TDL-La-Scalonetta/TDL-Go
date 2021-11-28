@@ -18,6 +18,8 @@ let app = new Vue({
         Winner: null,
         BaseValue: 0,
         Started: false,
+        Finished: false,
+        TimeLeft: "0",
         Product: null,
         Amount: 0,
         Users: []
@@ -26,17 +28,20 @@ let app = new Vue({
       authenticated: false
     }
   },
-  created() {
-    this.fetchRooms()
+  computed: {
+    canOffer() {
+      return this.currentRoom.Started && !this.currentRoom.Finished
+    }
   },
   methods: {
-    setUser() {
-      this.authenticated = true
-    },
     fetchRooms() {
       this.$http.get("/rooms").then(res => {
         this.rooms = res.data
       })
+    },
+    setUser() {
+      this.authenticated = true
+      this.fetchRooms()
     },
     createRoom() {
       this.$http.post("/rooms/new", {
@@ -45,11 +50,7 @@ let app = new Vue({
         "Product": this.newRoom.product,
         "Value": this.newRoom.value.toString()
       }).then(res => {
-        this.newRoom = {
-          name: '',
-          product: '',
-          value: ''
-        }
+        this.newRoom = { name: '', product: '', value: '' }
         this.fetchRooms()
       })
     },
@@ -65,20 +66,57 @@ let app = new Vue({
           this.handleNewMessage(event)
         });
 
+        this.ws.addEventListener('close', (event) => {
+          this.onWebsocketClose(event)
+        });
+
+        this.ws.addEventListener('error', (event) => {
+          this.onWebsocketError(event)
+        });
       } catch(error) {
         console.log('Error al conectarse')
       }
     },
-    disconnect() {
-      console.log("Salir")
+    finish() {
+      let m = {
+        action: 'finish',
+        room: this.currentRoom.Name
+      }
+      this.push(m)
     },
-    onWebsocketOpen() {
-      console.log("connected to WS!");
+    disconnect() {
+      let m = {
+        action: 'leave',
+        room: this.currentRoom.Name
+      }
+      this.push(m)
+      this.ws.close()
+      this.currentRoom = {
+        Name: null,
+        Owner: null,
+        Winner: null,
+        BaseValue: 0,
+        Started: false,
+        Finished: false,
+        TimeLeft: "0",
+        Product: null,
+        Amount: 0,
+        Users: []
+      }
+    },
+    onWebsocketError(event) {
+      console.log("Error on WS!", event);
+    },
+    onWebsocketClose(event) {
+      console.log("disconnected from WS!", event);
+    },
+    onWebsocketOpen(event) {
+      console.log("connected to WS!", event);
     },
     handleNewMessage(event) {
       let data = JSON.parse(event.data);
 
-      console.log('Data received', data)
+      if (data.Type != "Time") console.log(data)
 
       this.currentRoom.Owner =  data.Owner
       this.currentRoom.Name = data.Name
@@ -86,8 +124,13 @@ let app = new Vue({
       this.currentRoom.Product = data.Product
       this.currentRoom.BaseValue = data.BaseValue
       this.currentRoom.Started = data.Started
+      this.currentRoom.Finished = data.Finished
+      this.currentRoom.TimeLeft = data.TimeLeft
       this.currentRoom.Amount = data.Amount
       this.currentRoom.Users = data.Users
+
+      if (data.Type == 'Ended')
+        console.log("subasta finalizadaa", data)
     },
     sendMessageX() {
       this.offer = Number(this.currentRoom.BaseValue) + 10
@@ -103,13 +146,17 @@ let app = new Vue({
     },
     sendMessage() {
       if (this.offer !== "") {
-        this.ws.send(JSON.stringify({
+        let m = {
           action: 'offer',
           offer: this.offer.toString(),
           room: this.currentRoom.Name
-        }));
+        }
+        this.push(m)
         this.offer = "";
       }
+    },
+    push(message) {
+      this.ws.send(JSON.stringify(message));
     }
   }
 })
