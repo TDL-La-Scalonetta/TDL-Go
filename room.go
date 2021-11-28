@@ -60,7 +60,7 @@ func newRoom(Owner User, Name string, Product string, BaseValue float32) *Room {
 
 func (room *Room) mapUsers() []string {
 	var list = make([]string, 0)
-	for user, _ := range room.users {
+	for user := range room.users {
 		list = append(list, user.Name)
 	}
 
@@ -68,7 +68,7 @@ func (room *Room) mapUsers() []string {
 }
 
 func (room *Room) notify(message *RoomMessage) {
-	for u, _ := range room.users {
+	for u := range room.users {
 		u.updateStatus(message)
 	}
 }
@@ -110,7 +110,7 @@ func (room *Room) UnregisterUser(user *User) {
 }
 
 func (room *Room) ProcessOffer(message *UserMessage) {
-	currentOffer, e := strconv.ParseFloat(message.Offer, 16)
+	currentOffer, e := strconv.ParseFloat(message.Offer, 32)
 	if e != nil {
 		fmt.Println("No se pudo parsear el valor", message.Offer)
 		return
@@ -128,18 +128,13 @@ func (room *Room) ProcessOffer(message *UserMessage) {
 }
 
 func (room *Room) StartSubasta() {
-	var list = make([]string, 0)
-	for user, _ := range room.users {
-		if user.Name != room.Owner.Name {
-			list = append(list, user.Name)
-		}
-	}
+	var list = room.getUsersByName()
 	fmt.Println("Iniciamos la subasta si los usuarios no-owner son mas de tres: ", len(list))
 	if len(list) >= 3 {
 		if room.Timer == nil {
-			go room.Clock()
+			go room.startRoomClock()
 		}
-		if room.Started == false {
+		if !room.Started {
 			room.Started = true
 			fmt.Println("Creamos la notificacion que se inicia.")
 			newRoomMessage := room.createMessage("Started")
@@ -149,13 +144,30 @@ func (room *Room) StartSubasta() {
 	}
 }
 
-func (room *Room) EndSubasta() {
+func (room *Room) getUsersByName() []string {
+	var list = make([]string, 0)
+	for user, _ := range room.users {
+		if user.Name != room.Owner.Name {
+			list = append(list, user.Name)
+		}
+	}
+
+	return list
+}
+
+func (room *Room) getUsers() []*User {
 	var list = make([]*User, 0)
 	for user, _ := range room.users {
 		if user.Name != room.Owner.Name {
 			list = append(list, user)
 		}
 	}
+
+	return list
+}
+
+func (room *Room) EndSubasta() {
+	var list = room.getUsers()
 
 	if len(list) == 1 {
 		// Terminamos si queda uno solo
@@ -171,7 +183,8 @@ func (room *Room) EndSubasta() {
 }
 
 // Routines
-func (room *Room) Clock() {
+//Creates a new ticker and starts the clock for the room
+func (room *Room) startRoomClock() {
 	room.Timer = time.NewTicker(time.Second)
 
 	defer func() {
