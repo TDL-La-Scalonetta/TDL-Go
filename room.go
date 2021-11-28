@@ -40,7 +40,7 @@ type RoomMessage struct {
 }
 
 func newRoom(Owner User, Name string, Product string, BaseValue float32) *Room {
-	duration, _ := time.ParseDuration("1m")
+	duration, _ := time.ParseDuration("5m")
 	return &Room{
 		Owner:      Owner,
 		Name:       Name,
