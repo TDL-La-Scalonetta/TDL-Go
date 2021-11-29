@@ -1,141 +1,232 @@
-
 package main
 
 import (
-	"log"
+	"fmt"
+	"sort"
 	"strconv"
 	"time"
 )
 
 type Room struct {
-	Owner         User							`json:"Owner"`
-	Winner  			User							`json:"Winner"`
-	Name 					string						`json:"Name"`
-	Product 			string						`json:"Product"`
-	BaseValue 		float32						`json:"BaseValue"`
-	Started				bool							`json:"Started"`
-	Timer         *time.Ticker
-	users 				map[*User]bool		`json:"-"`
-	register 			chan *User				`json:"-"`
-	unregister 		chan *User				`json:"-"`
-	offers        chan *UserMessage	`json:"-"`
+	Owner      User              `json:"Owner"`
+	Winner     User              `json:"Winner"`
+	Name       string            `json:"Name"`
+	Product    string            `json:"Product"`
+	BaseValue  float32           `json:"BaseValue"`
+	Started    bool              `json:"Started"`
+	Finished   bool              `json:"Finished"`
+	TimeLeft   time.Duration     `json:"TimeLeft"`
+	Timer      *time.Ticker      `json:"-"`
+	users      map[*User]bool    `json:"-"`
+	register   chan *User        `json:"-"`
+	finish     chan bool         `json:"-"`
+	unregister chan *User        `json:"-"`
+	stopClock  chan bool         `json:"-"`
+	offers     chan *UserMessage `json:"-"`
 }
 
 type RoomMessage struct {
-  Owner   		string
-	Winner  		string
-  Name    		string
-  Product 		string
-  BaseValue   float32
-  Users   		[]string
-	Amount      float32
-  Started 		bool
+	Type      string
+	Owner     string
+	Winner    string
+	Name      string
+	Product   string
+	BaseValue float32
+	Users     []string
+	Amount    float32
+	TimeLeft  string
+	Started   bool
+	Finished  bool
 }
 
 func newRoom(Owner User, Name string, Product string, BaseValue float32) *Room {
-	return &Room {
-		Owner:      	Owner,
-		Name: 				Name,
-		Product: 			Product,
-		BaseValue: 		BaseValue,
-		Started:			false,
-		users:      	make(map[*User]bool),
-		register:   	make(chan *User),
-    unregister: 	make(chan *User),
-		offers:     	make(chan *UserMessage),
-	}
-}
-
-func (room *Room) StartTimer() {
-	room.Timer = time.NewTicker(time.Second)
-	done := make(chan bool)
-  for {
-    select {
-    	case <-done:
-        return
-    	case t := <-room.Timer.C:
-        log.Println("Timer is running", t)
-    }
-  }
-}
-
-func (room *Room) createMessage() *RoomMessage {
-	return &RoomMessage {
-		Owner: room.Owner.Name,
-		Winner: room.Winner.Name,
-		Name: room.Name,
-		Product: room.Product,
-		BaseValue: room.BaseValue,
-		Users: room.mapUsers(),
-		Started: room.Started,
+	duration, _ := time.ParseDuration("1m")
+	return &Room{
+		Owner:      Owner,
+		Name:       Name,
+		Product:    Product,
+		BaseValue:  BaseValue,
+		TimeLeft:   duration,
+		Started:    false,
+		Finished:   false,
+		users:      make(map[*User]bool),
+		register:   make(chan *User),
+		unregister: make(chan *User),
+		finish:     make(chan bool, 1),
+		stopClock:  make(chan bool),
+		offers:     make(chan *UserMessage),
 	}
 }
 
 func (room *Room) mapUsers() []string {
-  var list = make([]string, 0)
-  for user, _ := range room.users {
-    list = append(list, user.Name)
-  }
-
-  return list
-}
-
-func (room *Room) registerUser(user *User) {
-	room.users[user] = true
-
-	if (len(room.users) >= 3) {
-		room.Started = true
-		if (room.Timer == nil) { go room.StartTimer() }
+	var list = make([]string, 0)
+	for user := range room.users {
+		list = append(list, user.Name)
 	}
-	newRoomMessage := room.createMessage()
-	for u, _ := range room.users {
-		u.Sender <-newRoomMessage
-  }
+
+	return list
 }
 
-func (room *Room) unregisterUser(user *User) {
-	log.Println("Sale usuario", user)
-	room.users[user] = false
-	users[user] = false
-
-	user.disconnect()
-
-	newRoomMessage := room.createMessage()
-
-	for u, _ := range room.users {
-    u.Sender <-newRoomMessage
-  }
+func (room *Room) notify(message *RoomMessage) {
+	for u := range room.users {
+		u.updateStatus(message)
+	}
 }
 
-func (room *Room) processOffer(message *UserMessage) {
-	currentOffer, e := strconv.ParseFloat(message.Offer, 16)
-	if (e != nil) {
-		log.Println("No se pudo parsear el valor", message.Offer)
+func (room *Room) createMessage(messageType string) *RoomMessage {
+	return &RoomMessage{
+		Type:      messageType,
+		Owner:     room.Owner.Name,
+		Winner:    room.Winner.Name,
+		Name:      room.Name,
+		Product:   room.Product,
+		BaseValue: room.BaseValue,
+		TimeLeft:  room.TimeLeft.String(),
+		Users:     room.mapUsers(),
+		Started:   room.Started,
+		Finished:  room.Finished,
+	}
+}
+
+func (room *Room) closeSubasta() {
+	fmt.Println("Fin de la subasta!")
+	room.Finished = true
+	newRoomMessage := room.createMessage("Ended")
+	room.notify(newRoomMessage)
+	fmt.Println("El ganador es:", room.Winner.Name, room.BaseValue)
+}
+
+// Process messages
+func (room *Room) RegisterUser(user *User) {
+	room.users[user] = true
+	newRoomMessage := room.createMessage("Enter")
+	room.notify(newRoomMessage)
+}
+
+func (room *Room) UnregisterUser(user *User) {
+	delete(room.users, user)
+	newRoomMessage := room.createMessage("Leave")
+	room.notify(newRoomMessage)
+}
+
+func (room *Room) ProcessOffer(message *UserMessage) {
+	currentOffer, e := strconv.ParseFloat(message.Offer, 32)
+	if e != nil {
+		fmt.Println("No se pudo parsear el valor", message.Offer)
 		return
 	}
 	validOffer := float32(currentOffer)
 
-	if (room.BaseValue < validOffer) {
+	if room.BaseValue < validOffer {
 		room.Winner = *message.User
 		room.BaseValue = validOffer
+		message.User.LastOffer = validOffer
 	}
-	newRoomMessage := room.createMessage()
-	for u, _ := range room.users {
-    u.Sender <-newRoomMessage
-  }
+
+	newRoomMessage := room.createMessage("Offer")
+	room.notify(newRoomMessage)
+}
+
+func (room *Room) StartSubasta() {
+	var list = room.getUsersByName()
+	fmt.Println("Iniciamos la subasta si los usuarios no-owner son mas de tres: ", len(list))
+	if len(list) >= 3 {
+		if room.Timer == nil {
+			go room.startRoomClock()
+		}
+		if !room.Started {
+			room.Started = true
+			fmt.Println("Creamos la notificacion que se inicia.")
+			newRoomMessage := room.createMessage("Started")
+			room.notify(newRoomMessage)
+			fmt.Println("Enviamos notificacion de inicio a ", len(room.users))
+		}
+	}
+}
+
+func (room *Room) getUsersByName() []string {
+	var list = make([]string, 0)
+	for user, _ := range room.users {
+		if user.Name != room.Owner.Name {
+			list = append(list, user.Name)
+		}
+	}
+
+	return list
+}
+
+func (room *Room) getUsers() []*User {
+	var list = make([]*User, 0)
+	for user, _ := range room.users {
+		if user.Name != room.Owner.Name {
+			list = append(list, user)
+		}
+	}
+
+	return list
+}
+
+func (room *Room) EndSubasta() {
+	var list = room.getUsers()
+
+	if len(list) == 1 {
+		// Terminamos si queda uno solo
+		room.Winner = *list[0]
+		room.BaseValue = list[0].LastOffer
+		room.finish <- true
+	} else {
+		// Si se fue el que era el winner, ponemos al que haya hecho la oferta mayor.
+		sort.Slice(list, func(i, j int) bool { return list[i].LastOffer > list[j].LastOffer })
+		room.Winner = *list[0]
+		room.BaseValue = list[0].LastOffer
+	}
+}
+
+// Routines
+//Creates a new ticker and starts the clock for the room
+func (room *Room) startRoomClock() {
+	room.Timer = time.NewTicker(time.Second)
+
+	defer func() {
+		fmt.Println("Se detiene el timer")
+		room.Timer.Stop()
+	}()
+
+	for {
+		select {
+		case <-room.stopClock:
+			return
+		case <-room.Timer.C:
+			room.TimeLeft -= time.Second
+			newRoomMessage := room.createMessage("Time")
+			room.notify(newRoomMessage)
+
+			if room.TimeLeft == 0 {
+				fmt.Println("Se termino el tiempo, cerramos la subasta.")
+				room.finish <- true
+			}
+		}
+	}
 }
 
 func (room *Room) Run() {
+	defer func() {
+		room.stopClock <- true
+		room.closeSubasta()
+	}()
+
 	for {
-			select {
-				case user := <-room.register:
-						room.registerUser(user)
-
-				case user := <-room.unregister:
-						room.unregisterUser(user)
-
-				case offer := <-room.offers:
-						room.processOffer(offer)
-			}
+		select {
+		case <-room.finish:
+			return
+		case user := <-room.register:
+			room.RegisterUser(user)
+			room.StartSubasta()
+		case user := <-room.unregister:
+			room.UnregisterUser(user)
+			room.EndSubasta()
+		case offer := <-room.offers:
+			room.ProcessOffer(offer)
+		}
 	}
 }
