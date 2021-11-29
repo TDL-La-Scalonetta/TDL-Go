@@ -37,7 +37,8 @@
         <div class="room-body">
           <p>Precio: {{ room.BaseValue}}</p>
           <p>Participantes: {{ room.Participants}}</p>
-          <div v-if="authenticated"><a class="connect" @click="connect(room)">Ingresar</a></div>
+          <div v-if="authenticated && !room.Finished"><a class="connect" @click="connect(room)">Ingresar</a></div>
+          <div v-if="room.Finished" style="color: red;">Subasta Finalizada</div>
         </div>
       </div>
     </div>
@@ -173,3 +174,4 @@
 <script src="app.js"></script>
 
 </html>
+
