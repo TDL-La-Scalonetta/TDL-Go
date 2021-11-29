@@ -119,7 +119,16 @@ let app = new Vue({
       this.currentRoom.Amount = data.Amount
       this.currentRoom.Users = data.Users
 
-      if (data.Type == 'Ended') this.ws.close(1000)
+      if (data.Type == 'Ended') {
+        this.updateRoom(data)
+        this.ws.close(1000)
+      }
+    },
+    updateRoom(data) {
+      let room = this.rooms.find(r => r.Name == data.Name)
+      if (room){
+        room.Finished = data.Finished
+      }
     },
     sendMessageX() {
       this.offer = Number(this.currentRoom.BaseValue) + 10
