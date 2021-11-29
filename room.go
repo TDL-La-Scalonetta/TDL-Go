@@ -40,7 +40,7 @@ type RoomMessage struct {
 }
 
 func newRoom(Owner User, Name string, Product string, BaseValue float32) *Room {
-	duration, _ := time.ParseDuration("5m")
+	duration, _ := time.ParseDuration("1m")
 	return &Room{
 		Owner:      Owner,
 		Name:       Name,
@@ -52,7 +52,7 @@ func newRoom(Owner User, Name string, Product string, BaseValue float32) *Room {
 		users:      make(map[*User]bool),
 		register:   make(chan *User),
 		unregister: make(chan *User),
-		finish:     make(chan bool),
+		finish:     make(chan bool, 1),
 		stopClock:  make(chan bool),
 		offers:     make(chan *UserMessage),
 	}
