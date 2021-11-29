@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/websocket"
 	"log"
+
+	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
@@ -12,11 +13,11 @@ var upgrader = websocket.Upgrader{
 }
 
 type User struct {
-	Name   		string            `json:"Name"`
+	Name      string            `json:"Name"`
 	LastOffer float32           `json:"LastOffer"`
-	Conn   		*websocket.Conn   `json:"-"`
-	Room  		*Room             `json:"-"`
-	Sender 		chan *RoomMessage `json:"-"`
+	Conn      *websocket.Conn   `json:"-"`
+	Room      *Room             `json:"-"`
+	Sender    chan *RoomMessage `json:"-"`
 }
 
 type UserMessage struct {
@@ -28,9 +29,9 @@ type UserMessage struct {
 
 func newUser(name string) *User {
 	return &User{
-		Name:   name,
+		Name:      name,
 		LastOffer: 0,
-		Sender: make(chan *RoomMessage),
+		Sender:    make(chan *RoomMessage),
 	}
 }
 
@@ -41,11 +42,11 @@ func (user *User) handleMessage(rawMessage []byte) {
 	}
 
 	switch message.Action {
-		case "offer":
-			message.User = user
-			user.Room.offers <- &message
-		case "finish":
-			user.Room.finish <- true
+	case "offer":
+		message.User = user
+		user.Room.offers <- &message
+	case "finish":
+		user.Room.finish <- true
 	}
 }
 
@@ -63,8 +64,9 @@ func (user *User) updateStatus(rM *RoomMessage) {
 
 func (user *User) ReadSocket() {
 	defer func() {
-		user.Room.unregister<-user
+		user.Room.unregister <- user
 		user.Conn.Close()
+		user.Room = nil
 	}()
 	for {
 		_, rawMessage, err := user.Conn.ReadMessage()
