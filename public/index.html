@@ -77,6 +77,7 @@
           </div>
           <div v-else-if="currentRoom.Finished" style="text-align: center; color: green;">
             <h4>Subasta Finalizada!</h4>
+            <h4>{{currentRoom.Winner}} es el ganador</h4>
           </div>
           <div v-else-if="!currentRoom.Started" style="text-align: center; color: orangered;">
             <h4>Esperando participantes</h4>
