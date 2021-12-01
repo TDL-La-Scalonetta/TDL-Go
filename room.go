@@ -177,8 +177,10 @@ func (room *Room) EndSubasta() {
 	} else {
 		// Si se fue el que era el winner, ponemos al que haya hecho la oferta mayor.
 		sort.Slice(list, func(i, j int) bool { return list[i].LastOffer > list[j].LastOffer })
-		room.Winner = *list[0]
-		room.BaseValue = list[0].LastOffer
+		if list[0].LastOffer > 0 {
+			room.Winner = *list[0]
+			room.BaseValue = list[0].LastOffer
+		}
 	}
 }
 

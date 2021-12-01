@@ -119,8 +119,9 @@ let app = new Vue({
       this.currentRoom.Amount = data.Amount
       this.currentRoom.Users = data.Users
 
+      this.updateRoom(data)
+
       if (data.Type == 'Ended') {
-        this.updateRoom(data)
         this.ws.close(1000)
       }
     },
