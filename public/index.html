@@ -36,7 +36,7 @@
         </div>
         <div class="room-body">
           <p>Precio: {{ room.BaseValue}}</p>
-          <p>Participantes: {{ room.Participants}}</p>
+          <p v-if="room.Finished">Ganador: {{room.Winner.Name}}</p>
           <div v-if="authenticated && !room.Finished"><a class="connect" @click="connect(room)">Ingresar</a></div>
           <div v-if="room.Finished" style="color: red;">Subasta Finalizada</div>
         </div>
@@ -58,7 +58,7 @@
         </div>
         <h2 style="padding: 20px; margin: 10px 0px; display: flex; justify-content: space-between; align-items: center">
           <span>Producto: <b>{{ currentRoom.Product }}</b></span>
-          <span style="color: mediumseagreen; text-transform: uppercase;">{{ currentRoom.Winner }}</span>
+          <span style="color: mediumseagreen; text-transform: uppercase;"><span v-if="currentRoom.Finished"> Ganador: </span>{{ currentRoom.Winner }}</span>
         </h2>
         <p style="text-align: center; padding: 20px; border-top: solid 1px #999; margin: 10px;">
           <span style="font-size: 14px">Valor Actual</span>
