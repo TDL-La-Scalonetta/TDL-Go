@@ -22,7 +22,6 @@ type Room struct {
 	stopClock  chan bool         `json:"-"`
 	offers     chan *UserMessage `json:"-"`
 	start      chan bool
-	close      chan bool
 }
 
 type RoomMessage struct {
@@ -98,14 +97,10 @@ func (room *Room) StartSubasta() {
 
 func (room *Room) EndSubasta() {
 	room.Finished = true
-
 	for user, _ := range room.users {
 		user.finished <- true
-		delete(room.users, user)
 	}
-
 	room.notify()
-	room.close<-true
 }
 
 // Routines
@@ -133,10 +128,10 @@ func (room *Room) startRoomClock() {
 	}
 }
 
-func (room *Room) Run() {
+func (room *Room) Run(c chan bool) {
 	defer func() {
-		close(room.offers)
-		fmt.Println("Cerrmos el channel.")
+		fmt.Println("Terminado")
+		c <- true
 	}()
 	for {
 		select {
@@ -146,7 +141,13 @@ func (room *Room) Run() {
 			room.RegisterUser(user)
 		case <-room.finish:
 			room.EndSubasta()
-			return
+			close(room.offers)
+		case user := <-room.unregister:
+			delete(room.users, user)
+			fmt.Println("Quedan:", len(room.users))
+			if len(room.users) == 0 {
+				return
+			}
 		case offer := <-room.offers:
 			room.ProcessOffer(offer)
 		}

@@ -28,9 +28,9 @@ func main() {
 			wg.Done()
 		}()
 
-		newRoom.close = c
-		go newRoom.Run()
-		add_users(100, newRoom)
+		go newRoom.Run(c)
+
+		add_users(10, newRoom)
 		newRoom.start <- true
 		for {
 			select {

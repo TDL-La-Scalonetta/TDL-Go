@@ -37,6 +37,7 @@ func newUser(name string) *User {
 func (user *User) start() {
 	defer func() {
 		recover()
+		user.Room.unregister <- user
 	}()
 
 	for {
