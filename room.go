@@ -144,7 +144,7 @@ func (room *Room) Run(c chan bool) {
 			close(room.offers)
 		case user := <-room.unregister:
 			delete(room.users, user)
-			fmt.Println("Quedan:", len(room.users))
+			// fmt.Println("Quedan:", len(room.users), "usuarios por salir")
 			if len(room.users) == 0 {
 				return
 			}

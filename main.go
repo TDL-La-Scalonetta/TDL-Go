@@ -30,14 +30,12 @@ func main() {
 
 		go newRoom.Run(c)
 
-		add_users(10, newRoom)
+		add_users(1000, newRoom)
 		newRoom.start <- true
 		for {
 			select {
 			case <-c:
 				return
-			default:
-
 			}
 		}
 	}(close)
@@ -49,7 +47,7 @@ func main() {
 func add_users(total int, room *Room) {
 	for i := 1; i <= total; i++ {
 		value := i
-		name := fmt.Sprintf("User-%d", value)
+		name := fmt.Sprintf("User%d", value)
 		user := newUser(name)
 		room.register <- user
 	}
