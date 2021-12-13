@@ -28,3 +28,6 @@ Otras fuentes:
 - https://medium.com/safetycultureengineering/an-overview-of-memory-management-in-go-9a72ec7c76a8 (Manejo de memoria)
 - https://deepu.tech/memory-management-in-golang/ (Manejo de Memoria)
 - https://medium.com/a-journey-with-go/go-how-does-the-garbage-collector-watch-your-application-dbef99be2c35 (Manejo de Memoria)
+- https://go.dev/solutions/mercadolibre
+- https://blog.heroku.com/microservices_in_go_using_go_kit
+- https://www.geeksforgeeks.org/defer-keyword-in-golang/#:~:text=In%20Go%20language%2C%20defer%20statements,until%20the%20nearby%20functions%20returns.
